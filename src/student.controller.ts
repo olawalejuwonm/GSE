@@ -22,9 +22,19 @@ export class StudentController {
 
   @Post('matric')
   async enterMatric(@Body('matricNumber') matricNumber: string) {
+    // Only fetch, do not create student
+    const student = await this.studentService.findByMatricNumber(matricNumber);
+    if (student && (!student.skills || student.skills.length === 0)) {
+      return {
+        name: student.name,
+        department: student.department,
+        faculty: student.faculty,
+        phone: student.phone,
+        email: student.email,
+      };
+    }
     // Simulate lookup (replace with real lookup if available)
-    const name = 'Student ' + matricNumber;
-    return { name };
+    return { name: 'Student ' + matricNumber };
   }
 
   @Post('confirm')

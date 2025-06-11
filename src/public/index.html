@@ -63,6 +63,7 @@
   </div>
   <script>
     const api = async (url, data = {}, method = 'POST') => {
+      console.log('API call:', url, data, method); // Log to browser console
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -80,6 +81,13 @@
         document.getElementById('name').value = name;
         e.target.style.display = 'none';
         document.getElementById('name-form').style.display = '';
+        // If student details exist, prefill details form
+        if (res.department || res.faculty || res.phone || res.email) {
+          document.getElementById('department').value = res.department || '';
+          document.getElementById('faculty').value = res.faculty || '';
+          document.getElementById('phone').value = res.phone || '';
+          document.getElementById('email').value = res.email || '';
+        }
       }
     };
     document.getElementById('name-form').onsubmit = async e => {
