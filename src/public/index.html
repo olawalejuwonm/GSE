@@ -110,6 +110,19 @@
       if (res.success) {
         e.target.style.display = 'none';
         document.getElementById('otp-form').style.display = '';
+      } else if (res.error === 'Email already verified. No OTP sent.') {
+        e.target.style.display = 'none';
+        // Fetch skills
+        const skillsRes = await fetch('/student/skills');
+        const skills = (await skillsRes.json()).skills;
+        const skillsList = document.getElementById('skills-list');
+        skillsList.innerHTML = '';
+        skills.forEach(skill => {
+          const label = document.createElement('label');
+          label.innerHTML = `<input type="checkbox" value="${skill}"> ${skill}`;
+          skillsList.appendChild(label);
+        });
+        document.getElementById('skills-form').style.display = '';
       } else {
         showError(res.error || 'Failed to send OTP');
       }
