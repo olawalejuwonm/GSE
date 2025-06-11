@@ -76,6 +76,10 @@
       e.preventDefault();
       matricNumber = document.getElementById('matricNumber').value;
       const res = await api('/student/matric', { matricNumber });
+      if (res.error) {
+        showError(res.error);
+        return;
+      }
       if (res.name) {
         name = res.name;
         document.getElementById('name').value = name;

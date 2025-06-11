@@ -18,8 +18,8 @@ export class Student extends Document {
   @Prop()
   phone: string;
 
-  @Prop({ required: true, unique: true })
-  email: string;
+  @Prop() // email is now optional and not unique
+  email?: string;
 
   @Prop()
   isEmailVerified: boolean;

@@ -134,3 +134,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Ignore datas folder
+/datas/
+
+/data-seeder/dist-seeder/

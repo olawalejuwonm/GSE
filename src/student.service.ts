@@ -13,6 +13,7 @@ export class StudentService {
   }
 
   async createOrUpdateStudent(data: Partial<Student>) {
+    // Use matricNumber as the main identifier
     return this.studentModel.findOneAndUpdate(
       { matricNumber: data.matricNumber },
       { $set: data },
@@ -20,16 +21,19 @@ export class StudentService {
     );
   }
 
-  async setOtp(email: string, otp: string) {
+  async setOtp(identifier: string, otp: string) {
+    // identifier can be email or matricNumber
+    const query = identifier.includes('@') ? { email: identifier } : { matricNumber: identifier };
     return this.studentModel.findOneAndUpdate(
-      { email },
+      query,
       { $set: { otp, otpExpires: new Date(Date.now() + 10 * 60 * 1000) } },
       { new: true }
     );
   }
 
-  async verifyOtp(email: string, otp: string) {
-    const student = await this.studentModel.findOne({ email });
+  async verifyOtp(identifier: string, otp: string) {
+    const query = identifier.includes('@') ? { email: identifier } : { matricNumber: identifier };
+    const student = await this.studentModel.findOne(query);
     if (!student || student.otp !== otp || student.otpExpires < new Date()) {
       return false;
     }
@@ -40,9 +44,10 @@ export class StudentService {
     return true;
   }
 
-  async setSkills(email: string, skills: string[]) {
+  async setSkills(identifier: string, skills: string[]) {
+    const query = identifier.includes('@') ? { email: identifier } : { matricNumber: identifier };
     return this.studentModel.findOneAndUpdate(
-      { email },
+      query,
       { $set: { skills } },
       { new: true }
     );

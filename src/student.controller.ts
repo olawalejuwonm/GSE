@@ -24,6 +24,7 @@ export class StudentController {
   async enterMatric(@Body('matricNumber') matricNumber: string) {
     // Only fetch, do not create student
     const student = await this.studentService.findByMatricNumber(matricNumber);
+    console.log('Student found:', student);
     if (student && (!student.skills || student.skills.length === 0)) {
       return {
         name: student.name,
@@ -33,8 +34,8 @@ export class StudentController {
         email: student.email,
       };
     }
-    // Simulate lookup (replace with real lookup if available)
-    return { name: 'Student ' + matricNumber };
+    // If not found, return error
+    return { error: 'Student not found or registration already completed.' };
   }
 
   @Post('confirm')
@@ -50,31 +51,33 @@ export class StudentController {
     const student = await this.studentService.createOrUpdateStudent({
       matricNumber, department, faculty, phone, email, isEmailVerified: false
     });
-    // Generate OTP
-    const otp = this.studentService.generateOtp();
-    await this.studentService.setOtp(email, otp);
-    // Send OTP email
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: this.configService.get('GMAIL_USER'),
-        pass: this.configService.get('GMAIL_PASS'),
-      },
-    });
-    await transporter.sendMail({
-      from: this.configService.get('GMAIL_USER'),
-      to: email,
-      subject: 'Your OTP Code',
-      text: `Your OTP code is: ${otp}`,
-    });
-    return { success: true };
+    // Generate OTP only if email is provided
+    if (email) {
+      const otp = this.studentService.generateOtp();
+      await this.studentService.setOtp(email, otp);
+      // Send OTP email
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: this.configService.get('GMAIL_USER'),
+          pass: this.configService.get('GMAIL_PASS'),
+        },
+      });
+      await transporter.sendMail({
+        from: this.configService.get('GMAIL_USER'),
+        to: email,
+        subject: 'Your OTP Code',
+        text: `Your OTP code is: ${otp}`,
+      });
+    }
+    return { success: true, student, otpSent: !!email };
   }
 
   @Post('verify-otp')
   async verifyOtp(@Body() body: any) {
-    const { email, otp } = body;
-    const verified = await this.studentService.verifyOtp(email, otp);
-    return { verified };
+    const { identifier, otp } = body; // identifier can be email or matricNumber
+    const ok = await this.studentService.verifyOtp(identifier, otp);
+    return { success: ok };
   }
 
   @Get('skills')
@@ -84,8 +87,8 @@ export class StudentController {
 
   @Post('skills')
   async setSkills(@Body() body: any) {
-    const { email, skills } = body;
-    await this.studentService.setSkills(email, skills);
-    return { success: true };
+    const { identifier, skills } = body; // identifier can be email or matricNumber
+    const student = await this.studentService.setSkills(identifier, skills);
+    return { success: !!student };
   }
 }
