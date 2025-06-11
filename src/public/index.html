@@ -5,40 +5,119 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Registration</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
-    .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
-    h2 { text-align: center; }
-    label { display: block; margin-top: 1rem; }
-    input, select, button { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; border: 1px solid #ccc; }
-    button { background: #007bff; color: #fff; border: none; margin-top: 1.5rem; cursor: pointer; }
-    button:disabled { background: #aaa; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(120deg, #e0e7ff 0%, #f7f7f7 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 420px;
+      margin: 48px auto;
+      background: #fff;
+      padding: 2.5rem 2rem 2rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px #0002;
+      position: relative;
+    }
+    h2 {
+      text-align: center;
+      color: #2d3a5a;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+    }
+    label {
+      display: block;
+      margin-top: 1.2rem;
+      color: #2d3a5a;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 0.7rem;
+      margin-top: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #cfd8dc;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus {
+      border: 1.5px solid #7b61ff;
+      outline: none;
+    }
+    button {
+      background: linear-gradient(90deg, #7b61ff 0%, #4f8cff 100%);
+      color: #fff;
+      border: none;
+      margin-top: 2rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px #7b61ff22;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: linear-gradient(90deg, #4f8cff 0%, #7b61ff 100%);
+      box-shadow: 0 4px 16px #7b61ff33;
+    }
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
     .skills-list {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.6rem;
       justify-content: flex-start;
+      margin-top: 1rem;
     }
     .skills-list label {
       width: auto;
       margin: 0;
       background: #f1f1f1;
-      border-radius: 4px;
-      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      padding: 0.5rem 1.1rem;
       display: flex;
       align-items: center;
-      font-size: 0.95rem;
+      font-size: 0.98rem;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px #0001;
+      border: 1px solid #e0e7ff;
     }
     .skills-list label:hover {
       background: #e0e7ff;
+      box-shadow: 0 2px 8px #7b61ff22;
     }
-    .success { color: green; text-align: center; }
-    .error { color: red; text-align: center; }
+    .skills-list input[type="checkbox"] {
+      margin-right: 0.5rem;
+      accent-color: #7b61ff;
+      width: 1.1em;
+      height: 1.1em;
+    }
+    .success {
+      color: #2ecc40;
+      text-align: center;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+    }
+    .error {
+      color: #e74c3c;
+      text-align: center;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      font-size: 1.05rem;
+    }
     @media (max-width: 600px) {
-      .container { max-width: 98vw; padding: 1rem; }
+      .container { max-width: 98vw; padding: 1.2rem; }
       .skills-list { gap: 0.3rem; }
-      .skills-list label { font-size: 0.9rem; padding: 0.4rem 0.7rem; }
+      .skills-list label { font-size: 0.93rem; padding: 0.4rem 0.7rem; }
+      h2 { font-size: 1.3rem; }
+      input, select, button { font-size: 0.98rem; }
     }
   </style>
 </head>
