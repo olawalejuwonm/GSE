@@ -131,14 +131,16 @@
           skillsList.appendChild(label);
         });
         document.getElementById('skills-form').style.display = '';
-      } else showError('Invalid or expired OTP');
+      } else {
+        showError(res.error || 'Invalid or expired OTP');
+      }
     };
     document.getElementById('skills-form').onsubmit = async e => {
       e.preventDefault();
       const checked = Array.from(document.querySelectorAll('#skills-list input:checked')).map(i => i.value);
       const res = await api('/student/skills', { email, skills: checked });
       if (res.success) showSuccess('Registration complete!');
-      else showError('Failed to save skills');
+      else showError(res.error || 'Failed to save skills');
     };
     function showSuccess(msg) {
       document.getElementById('success-msg').innerText = msg;
