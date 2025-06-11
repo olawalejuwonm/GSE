@@ -53,6 +53,22 @@ export class StudentService {
 
   async setSkills(identifier: string, skills: string[]) {
     // Always use email for skills
+    // Check if any skill is already at max selection
+    const skillDocs = await this.skillModel.find({ code: { $in: skills } });
+    for (const skill of skillDocs) {
+      if ((skill.selectedCount ?? 0) >= (skill.maxSelection ?? 144)) {
+        throw new Error(`Skill '${skill.description}' has reached the maximum number of selections.`);
+      }
+    }
+    // Increment selectedCount for each selected skill
+    await Promise.all(
+      skillDocs.map(skill =>
+        this.skillModel.updateOne(
+          { code: skill.code },
+          { $inc: { selectedCount: 1 } }
+        )
+      )
+    );
     return this.studentModel.findOneAndUpdate(
       { email: identifier },
       { $set: { skills } },

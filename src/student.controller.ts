@@ -90,7 +90,11 @@ export class StudentController {
     @Post('skills')
     async setSkills(@Body() body: any) {
         const { email, skills } = body; // always use email as identifier
-        const student = await this.studentService.setSkills(email, skills);
-        return { success: !!student };
+        try {
+            const student = await this.studentService.setSkills(email, skills);
+            return { success: !!student };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
     }
 }

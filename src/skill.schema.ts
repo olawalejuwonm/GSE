@@ -14,6 +14,12 @@ export class Skill extends Document {
 
   @Prop()
   phone?: string;
+
+  @Prop({ default: 2 })
+  maxSelection?: number;
+
+  @Prop({ default: 0 })
+  selectedCount?: number;
 }
 
 export const SkillSchema = SchemaFactory.createForClass(Skill);

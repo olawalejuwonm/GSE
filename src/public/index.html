@@ -12,10 +12,34 @@
     input, select, button { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; border: 1px solid #ccc; }
     button { background: #007bff; color: #fff; border: none; margin-top: 1.5rem; cursor: pointer; }
     button:disabled { background: #aaa; }
-    .skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .skills-list label { width: auto; margin: 0; }
+    .skills-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: flex-start;
+    }
+    .skills-list label {
+      width: auto;
+      margin: 0;
+      background: #f1f1f1;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .skills-list label:hover {
+      background: #e0e7ff;
+    }
     .success { color: green; text-align: center; }
     .error { color: red; text-align: center; }
+    @media (max-width: 600px) {
+      .container { max-width: 98vw; padding: 1rem; }
+      .skills-list { gap: 0.3rem; }
+      .skills-list label { font-size: 0.9rem; padding: 0.4rem 0.7rem; }
+    }
   </style>
 </head>
 <body>
