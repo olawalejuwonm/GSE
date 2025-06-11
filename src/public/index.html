@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Registration</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+    h2 { text-align: center; }
+    label { display: block; margin-top: 1rem; }
+    input, select, button { width: 100%; padding: 0.5rem; margin-top: 0.5rem; border-radius: 4px; border: 1px solid #ccc; }
+    button { background: #007bff; color: #fff; border: none; margin-top: 1.5rem; cursor: pointer; }
+    button:disabled { background: #aaa; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .skills-list label { width: auto; margin: 0; }
+    .success { color: green; text-align: center; }
+    .error { color: red; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Student Registration</h2>
+    <form id="matric-form">
+      <label>Matric Number
+        <input type="text" id="matricNumber" required />
+      </label>
+      <button type="submit">Next</button>
+    </form>
+    <form id="name-form" style="display:none;">
+      <label>Name
+        <input type="text" id="name" readonly />
+      </label>
+      <button type="submit">Confirm</button>
+    </form>
+    <form id="details-form" style="display:none;">
+      <label>Department
+        <input type="text" id="department" required />
+      </label>
+      <label>Faculty
+        <input type="text" id="faculty" required />
+      </label>
+      <label>Phone
+        <input type="text" id="phone" required />
+      </label>
+      <label>Email
+        <input type="email" id="email" required />
+      </label>
+      <button type="submit">Send OTP</button>
+    </form>
+    <form id="otp-form" style="display:none;">
+      <label>Enter OTP
+        <input type="text" id="otp" required />
+      </label>
+      <button type="submit">Verify OTP</button>
+    </form>
+    <form id="skills-form" style="display:none;">
+      <div class="skills-list" id="skills-list"></div>
+      <button type="submit">Submit Skills</button>
+    </form>
+    <div class="success" id="success-msg" style="display:none;"></div>
+    <div class="error" id="error-msg" style="display:none;"></div>
+  </div>
+  <script>
+    const api = async (url, data = {}, method = 'POST') => {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: method === 'POST' ? JSON.stringify(data) : undefined
+      });
+      return res.json();
+    };
+    let matricNumber = '', name = '', email = '';
+    document.getElementById('matric-form').onsubmit = async e => {
+      e.preventDefault();
+      matricNumber = document.getElementById('matricNumber').value;
+      const res = await api('/student/matric', { matricNumber });
+      if (res.name) {
+        name = res.name;
+        document.getElementById('name').value = name;
+        e.target.style.display = 'none';
+        document.getElementById('name-form').style.display = '';
+      }
+    };
+    document.getElementById('name-form').onsubmit = async e => {
+      e.preventDefault();
+      await api('/student/confirm', { matricNumber, name });
+      e.target.style.display = 'none';
+      document.getElementById('details-form').style.display = '';
+    };
+    document.getElementById('details-form').onsubmit = async e => {
+      e.preventDefault();
+      const department = document.getElementById('department').value;
+      const faculty = document.getElementById('faculty').value;
+      const phone = document.getElementById('phone').value;
+      email = document.getElementById('email').value;
+      const res = await api('/student/details', { matricNumber, department, faculty, phone, email });
+      if (res.success) {
+        e.target.style.display = 'none';
+        document.getElementById('otp-form').style.display = '';
+      } else showError('Failed to send OTP');
+    };
+    document.getElementById('otp-form').onsubmit = async e => {
+      e.preventDefault();
+      const otp = document.getElementById('otp').value;
+      const res = await api('/student/verify-otp', { email, otp });
+      if (res.verified) {
+        e.target.style.display = 'none';
+        // Fetch skills
+        const skillsRes = await fetch('/student/skills');
+        const skills = (await skillsRes.json()).skills;
+        const skillsList = document.getElementById('skills-list');
+        skillsList.innerHTML = '';
+        skills.forEach(skill => {
+          const label = document.createElement('label');
+          label.innerHTML = `<input type="checkbox" value="${skill}"> ${skill}`;
+          skillsList.appendChild(label);
+        });
+        document.getElementById('skills-form').style.display = '';
+      } else showError('Invalid or expired OTP');
+    };
+    document.getElementById('skills-form').onsubmit = async e => {
+      e.preventDefault();
+      const checked = Array.from(document.querySelectorAll('#skills-list input:checked')).map(i => i.value);
+      const res = await api('/student/skills', { email, skills: checked });
+      if (res.success) showSuccess('Registration complete!');
+      else showError('Failed to save skills');
+    };
+    function showSuccess(msg) {
+      document.getElementById('success-msg').innerText = msg;
+      document.getElementById('success-msg').style.display = '';
+      document.getElementById('error-msg').style.display = 'none';
+    }
+    function showError(msg) {
+      document.getElementById('error-msg').innerText = msg;
+      document.getElementById('error-msg').style.display = '';
+      document.getElementById('success-msg').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
