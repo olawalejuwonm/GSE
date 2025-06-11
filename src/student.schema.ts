@@ -32,6 +32,15 @@ export class Student extends Document {
 
   @Prop()
   otpExpires: Date;
+
+  @Prop()
+  firstname?: string;
+
+  @Prop()
+  lastname?: string;
+
+  @Prop()
+  course_code?: string;
 }
 
 export const StudentSchema = SchemaFactory.createForClass(Student);

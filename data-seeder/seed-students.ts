@@ -24,6 +24,9 @@ const StudentSchema = new mongoose.Schema({
     skills: [String],
     otp: String,
     otpExpires: Date,
+    firstname: String,
+    lastname: String,
+    course_code: String,
 });
 
 async function seed() {
@@ -36,31 +39,44 @@ async function seed() {
 
     for (const rowRaw of data) {
         const row = rowRaw as Record<string, any>;
-        const matricNumber = row['Matric Number'] || row['matricNumber'] || row['matric_number'];
-        const name = row['Name'] || row['name'] || row['firstname'] + ' ' + (row['lastname'] || row['surname']);
+        const matricNumber = row['Matric Number'] || row['matricNumber'] || row['matric_number'] || row['matric_number'];
+        const firstname = row['Firstname'] || row['firstname'] || row['first_name'] || '';
+        const lastname = row['Lastname'] || row['lastname'] || row['last_name'] || '';
+        const name = row['Name'] || row['name'] || ((firstname || lastname) ? `${firstname} ${lastname}`.trim() : undefined);
         const department = row['Department'] || row['department'];
         const faculty = row['Faculty'] || row['faculty'];
         const phone = row['Phone'] || row['phone'];
+        const course_code = row['Course Code'] || row['course_code'] || row['course'] || '';
         if (!matricNumber || !name) {
             console.log('Skipping row (missing matricNumber or name):', row);
             continue;
         }
         try {
             const result = await Student.updateOne(
-                { matricNumber },
+                { matricNumber: matricNumber },
                 {
                     $set: {
-                        matricNumber, name, department, faculty, phone, isEmailVerified: false, skills: []             }
-                },
-                            { upsert: true }
-                  );
-                    if (result.upsertedCount || result.modifiedCount) {
-                        console.log(`Seeded: ${matricNumber} - ${name}`);
-                    } else {
-                        console.log(`No change for: ${matricNumber} - ${name}`);
+                        matricNumber: matricNumber,
+                        name: name,
+                        firstname: firstname,
+                        lastname: lastname,
+                        department: department,
+                        faculty: faculty,
+                        phone: phone,
+                        course_code: course_code,
+                        isEmailVerified: false,
+                        skills: []
                     }
+                },
+                { upsert: true }
+            );
+            if (result.upsertedCount || result.modifiedCount) {
+                console.log(`Seeded: ${matricNumber} - ${name}`);
+            } else {
+                console.log(`No change for: ${matricNumber} - ${name}`);
+            }
         } catch (err) {
-                    console.error(`Error seeding ${matricNumber} - ${name}:`, err.message);
+            console.error(`Error seeding ${matricNumber} - ${name}:`, err.message);
         }
     }
     await mongoose.disconnect();
