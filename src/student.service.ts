@@ -12,6 +12,10 @@ export class StudentService {
     return this.studentModel.findOne({ matricNumber });
   }
 
+  async findByEmail(email: string) {
+    return this.studentModel.findOne({ email });
+  }
+
   async createOrUpdateStudent(data: Partial<Student>) {
     // Use matricNumber as the main identifier
     return this.studentModel.findOneAndUpdate(

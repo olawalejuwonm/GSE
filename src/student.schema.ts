@@ -18,7 +18,7 @@ export class Student extends Document {
   @Prop()
   phone: string;
 
-  @Prop() // email is now optional and not unique
+  @Prop({ unique: true, sparse: true }) // email must be unique if present
   email?: string;
 
   @Prop()
