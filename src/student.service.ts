@@ -53,6 +53,12 @@ export class StudentService {
 
   async setSkills(identifier: string, skills: string[]) {
     // Always use email for skills
+    // Prevent re-selection if already set
+    const student = await this.studentModel.findOne({ email: identifier });
+    if (!student) throw new Error('Student not found.');
+    if (student.skills && student.skills.length > 0) {
+      throw new Error('You have already selected your skills.');
+    }
     // Check if any skill is already at max selection
     const skillDocs = await this.skillModel.find({ code: { $in: skills } });
     for (const skill of skillDocs) {
