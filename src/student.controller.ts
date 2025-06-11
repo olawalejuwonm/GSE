@@ -41,8 +41,9 @@ export class StudentController {
   @Post('confirm')
   async confirmName(@Body() body: any) {
     const { matricNumber, name } = body;
-    const student = await this.studentService.createOrUpdateStudent({ matricNumber, name });
-    return { success: true, student };
+    await this.studentService.createOrUpdateStudent({ matricNumber, name });
+    // Do not return student or OTP details for security
+    return { success: true };
   }
 
   @Post('details')
@@ -75,9 +76,10 @@ export class StudentController {
 
   @Post('verify-otp')
   async verifyOtp(@Body() body: any) {
-    const { identifier, otp } = body; // identifier can be email or matricNumber
-    const ok = await this.studentService.verifyOtp(identifier, otp);
-    return { success: ok };
+    const { email, otp } = body; // always use email as identifier for OTP
+    const ok = await this.studentService.verifyOtp(email, otp);
+    console.log('OTP verification result:', ok);
+    return { verified: ok };
   }
 
   @Get('skills')
@@ -87,8 +89,8 @@ export class StudentController {
 
   @Post('skills')
   async setSkills(@Body() body: any) {
-    const { identifier, skills } = body; // identifier can be email or matricNumber
-    const student = await this.studentService.setSkills(identifier, skills);
+    const { email, skills } = body; // always use email as identifier
+    const student = await this.studentService.setSkills(email, skills);
     return { success: !!student };
   }
 }

@@ -22,19 +22,18 @@ export class StudentService {
   }
 
   async setOtp(identifier: string, otp: string) {
-    // identifier can be email or matricNumber
-    const query = identifier.includes('@') ? { email: identifier } : { matricNumber: identifier };
+    // Always use email for OTP
     return this.studentModel.findOneAndUpdate(
-      query,
+      { email: identifier },
       { $set: { otp, otpExpires: new Date(Date.now() + 10 * 60 * 1000) } },
       { new: true }
     );
   }
 
   async verifyOtp(identifier: string, otp: string) {
-    const query = identifier.includes('@') ? { email: identifier } : { matricNumber: identifier };
-    const student = await this.studentModel.findOne(query);
-    if (!student || student.otp !== otp || student.otpExpires < new Date()) {
+    // Always use email for OTP
+    const student = await this.studentModel.findOne({ email: identifier });
+    if (!student || student.otp !== otp || !student.otpExpires || student.otpExpires < new Date()) {
       return false;
     }
     student.isEmailVerified = true;
@@ -45,9 +44,9 @@ export class StudentService {
   }
 
   async setSkills(identifier: string, skills: string[]) {
-    const query = identifier.includes('@') ? { email: identifier } : { matricNumber: identifier };
+    // Always use email for skills
     return this.studentModel.findOneAndUpdate(
-      query,
+      { email: identifier },
       { $set: { skills } },
       { new: true }
     );
