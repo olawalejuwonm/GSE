@@ -23,7 +23,7 @@ async function seedSkills() {
   const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
 
   for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
+    const row = rows[i] as unknown as any[];
     if (!row[1] || !row[2]) continue; // skip if no code or description
     const code = String(row[1]).trim();
     const description = String(row[2]).trim();

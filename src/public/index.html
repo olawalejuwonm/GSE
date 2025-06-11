@@ -112,14 +112,14 @@
         document.getElementById('otp-form').style.display = '';
       } else if (res.error === 'Email already verified. No OTP sent.') {
         e.target.style.display = 'none';
-        // Fetch skills
+        // Fetch skills from API and display as checkboxes
         const skillsRes = await fetch('/student/skills');
         const skills = (await skillsRes.json()).skills;
         const skillsList = document.getElementById('skills-list');
         skillsList.innerHTML = '';
         skills.forEach(skill => {
           const label = document.createElement('label');
-          label.innerHTML = `<input type="checkbox" value="${skill}"> ${skill}`;
+          label.innerHTML = `<input type="checkbox" value="${skill.code}"> ${skill.description}`;
           skillsList.appendChild(label);
         });
         document.getElementById('skills-form').style.display = '';
@@ -133,14 +133,15 @@
       const res = await api('/student/verify-otp', { email, otp });
       if (res.verified) {
         e.target.style.display = 'none';
-        // Fetch skills
+        // Fetch skills from API and display as checkboxes
         const skillsRes = await fetch('/student/skills');
         const skills = (await skillsRes.json()).skills;
         const skillsList = document.getElementById('skills-list');
         skillsList.innerHTML = '';
         skills.forEach(skill => {
+          // Display skill description, not the whole object
           const label = document.createElement('label');
-          label.innerHTML = `<input type="checkbox" value="${skill}"> ${skill}`;
+          label.innerHTML = `<input type="checkbox" value="${skill.code}"> ${skill.description}`;
           skillsList.appendChild(label);
         });
         document.getElementById('skills-form').style.display = '';

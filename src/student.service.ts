@@ -2,11 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Student } from './student.schema';
+import { Skill } from './skill.schema';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class StudentService {
-  constructor(@InjectModel(Student.name) private studentModel: Model<Student>) {}
+  constructor(
+    @InjectModel(Student.name) private studentModel: Model<Student>,
+    @InjectModel(Skill.name) private skillModel: Model<Skill>,
+  ) {}
 
   async findByMatricNumber(matricNumber: string) {
     return this.studentModel.findOne({ matricNumber });
@@ -54,6 +58,10 @@ export class StudentService {
       { $set: { skills } },
       { new: true }
     );
+  }
+
+  async getAllSkills(): Promise<Skill[]> {
+    return this.skillModel.find().sort({ description: 1 }).lean();
   }
 
   generateOtp() {

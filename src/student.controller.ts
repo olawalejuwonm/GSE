@@ -3,16 +3,6 @@ import { StudentService } from './student.service';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 
-const SKILLS = [
-    'Programming',
-    'Web Development',
-    'Data Analysis',
-    'Graphic Design',
-    'Public Speaking',
-    'Writing',
-    'Project Management',
-];
-
 @Controller('student')
 export class StudentController {
     constructor(
@@ -92,8 +82,9 @@ export class StudentController {
     }
 
     @Get('skills')
-    getSkills() {
-        return { skills: SKILLS };
+    async getSkills() {
+        const skills = await this.studentService.getAllSkills();
+        return { skills };
     }
 
     @Post('skills')
