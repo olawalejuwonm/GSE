@@ -30,8 +30,10 @@ export class StudentController {
 
     @Post('confirm')
     async confirmName(@Body() body: any) {
-        const { matricNumber, name } = body;
-        await this.studentService.createOrUpdateStudent({ matricNumber, name });
+        const { matricNumber, name, carryOver } = body;
+        const data: any = { matricNumber, name };
+        if (carryOver) data.isCarryOver = true;
+        await this.studentService.createOrUpdateStudent(data);
         // Do not return student or OTP details for security
         return { success: true };
     }

@@ -41,6 +41,9 @@ export class Student extends Document {
 
   @Prop()
   course_code?: string;
+
+  @Prop({ default: false })
+  isCarryOver?: boolean;
 }
 
 export const StudentSchema = SchemaFactory.createForClass(Student);

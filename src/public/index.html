@@ -125,7 +125,15 @@
 <body>
   <div class="container">
     <h2>Student Registration</h2>
-    <form id="matric-form">
+    <div id="start-screen" style="text-align:center; margin-bottom:1rem;">
+      <p style="font-weight:600; color:#2d3a5a;">Are you a carry-over student?</p>
+      <div style="display:flex; gap:0.6rem; justify-content:center;">
+        <button id="start-yes" type="button" style="padding:0.6rem 1rem;">Yes</button>
+        <button id="start-no" type="button" style="padding:0.6rem 1rem;">No</button>
+      </div>
+    </div>
+
+    <form id="matric-form" style="display:none;">
       <label>Matric Number
         <input type="text" id="matricNumber" required />
       </label>
@@ -133,7 +141,7 @@
     </form>
     <form id="name-form" style="display:none;">
       <label>Name
-        <input type="text" id="name" readonly />
+        <input type="text" id="name" />
       </label>
       <button type="submit">Confirm</button>
     </form>
@@ -166,7 +174,7 @@
     <div class="error" id="error-msg" style="display:none;"></div>
   </div>
   <script>
-    const api = async (url, data = {}, method = 'POST') => {
+  const api = async (url, data = {}, method = 'POST') => {
       console.log('API call:', url, data, method); // Log to browser console
       const res = await fetch(url, {
         method,
@@ -175,7 +183,8 @@
       });
       return res.json();
     };
-    let matricNumber = '', name = '', email = '';
+  let matricNumber = '', name = '', email = '';
+  let isCarryOver = false;
     function clearNotifications() {
       document.getElementById('success-msg').style.display = 'none';
       document.getElementById('error-msg').style.display = 'none';
@@ -189,11 +198,38 @@
         if (el) el.style.display = 'none';
       });
     }
+    // Start screen handlers
+    document.getElementById('start-yes').addEventListener('click', () => {
+      // Carry-over flow: show matric form
+      isCarryOver = true;
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('matric-form').style.display = '';
+      // make name editable when reached
+      document.getElementById('name').readOnly = false;
+    });
+    document.getElementById('start-no').addEventListener('click', () => {
+      isCarryOver = false;
+      document.getElementById('start-screen').style.display = 'none';
+      document.getElementById('matric-form').style.display = '';
+      document.getElementById('name').readOnly = true;
+    });
     document.getElementById('matric-form').onsubmit = async e => {
       e.preventDefault();
       matricNumber = document.getElementById('matricNumber').value;
+  const carryOverFlag = isCarryOver;
       const res = await api('/student/matric', { matricNumber });
       if (res.error) {
+        // If not found but user marked carry-over, allow manual entry
+        if (carryOverFlag && res.error && res.error.includes('not found')) {
+          clearNotifications();
+          document.getElementById('name').value = '';
+          e.target.style.display = 'none';
+          document.getElementById('name-form').style.display = '';
+          // mark locally so confirm sends carryOver
+          document.getElementById('name-form').dataset.carryOver = 'true';
+          isCarryOver = true;
+          return;
+        }
         showError(res.error);
         return;
       }
@@ -214,11 +250,21 @@
     };
     document.getElementById('name-form').onsubmit = async e => {
       e.preventDefault();
-  await api('/student/confirm', { matricNumber, name });
+      const carryOver = e.target.dataset.carryOver === 'true' || isCarryOver;
+      // Read latest name from input
+      name = document.getElementById('name').value ? document.getElementById('name').value.trim() : '';
+      // Validate: carry-over students must provide a name
+      if (carryOver && (!name || !name.trim())) {
+        showError('Please enter your name.');
+        return;
+      }
+      await api('/student/confirm', { matricNumber, name, carryOver });
   clearNotifications();
   e.target.style.display = 'none';
   document.getElementById('details-form').style.display = '';
     };
+    // Clear error as user types name
+    document.getElementById('name').addEventListener('input', () => clearNotifications());
     document.getElementById('details-form').onsubmit = async e => {
       e.preventDefault();
       const department = document.getElementById('department').value;
