@@ -64,24 +64,36 @@ export class StudentService {
     if (student.skills && student.skills.length > 0) {
       throw new Error('You have already selected your skills.');
     }
-    // Check if any skill is already at max selection
+    // Check and increment selectedCount for each selected skill using conditional update
     const skillDocs = await this.skillModel.find({ code: { $in: skills } });
-    for (const skill of skillDocs) {
-      if ((skill.selectedCount ?? 0) >= (skill.maxSelection ?? 144)) {
-        throw new Error(
-          `Skill '${skill.description}' has reached the maximum number of selections.`,
+
+    // Try to increment each skill atomically (best-effort using conditional update)
+    const incremented: string[] = [];
+    try {
+      for (const skill of skillDocs) {
+        const res = await this.skillModel.updateOne(
+          { code: skill.code, $expr: { $lt: ['$selectedCount', '$maxSelection'] } },
+          { $inc: { selectedCount: 1 } },
+        );
+        // If no document matched the conditional, it means it's at max
+        if (res.modifiedCount === 0 && res.matchedCount === 0) {
+          // Try an alternative query: matched but not incremented
+          const fresh = await this.skillModel.findOne({ code: skill.code }).lean();
+          if ((fresh.selectedCount ?? 0) >= (fresh.maxSelection ?? 140)) {
+            throw new Error(`Skill '${skill.description}' has reached the maximum number of selections.`);
+          }
+        }
+        incremented.push(skill.code);
+      }
+    } catch (err) {
+      // Rollback any increments we did
+      if (incremented.length > 0) {
+        await Promise.all(
+          incremented.map(code => this.skillModel.updateOne({ code }, { $inc: { selectedCount: -1 } })),
         );
       }
+      throw err;
     }
-    // Increment selectedCount for each selected skill
-    await Promise.all(
-      skillDocs.map((skill) =>
-        this.skillModel.updateOne(
-          { code: skill.code },
-          { $inc: { selectedCount: 1 } },
-        ),
-      ),
-    );
     const updatedStudent = await this.studentModel.findOneAndUpdate(
       { email: identifier },
       { $set: { skills } },
