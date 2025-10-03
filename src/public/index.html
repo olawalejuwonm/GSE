@@ -68,32 +68,33 @@
       cursor: not-allowed;
     }
     .skills-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      justify-content: flex-start;
       margin-top: 1rem;
+      max-height: 280px; /* scrollable area */
+      overflow-y: auto;
+      padding: 0.25rem;
+      border: 1px solid #e0e7ff;
+      border-radius: 8px;
+      background: #fafbff;
     }
     .skills-list label {
-      width: auto;
-      margin: 0;
-      background: #f1f1f1;
-      border-radius: 6px;
-      padding: 0.5rem 1.1rem;
       display: flex;
       align-items: center;
-      font-size: 0.98rem;
+      gap: 0.6rem;
+      padding: 0.6rem 0.8rem;
+      margin: 0.25rem 0;
+      border-radius: 6px;
+      border: 1px solid #e0e7ff;
+      background: #fff;
+      box-shadow: 0 1px 4px #0001;
       cursor: pointer;
       transition: background 0.2s, box-shadow 0.2s;
-      box-shadow: 0 1px 4px #0001;
-      border: 1px solid #e0e7ff;
+      font-size: 0.98rem;
     }
     .skills-list label:hover {
       background: #e0e7ff;
       box-shadow: 0 2px 8px #7b61ff22;
     }
-    .skills-list input[type="checkbox"] {
-      margin-right: 0.5rem;
+    .skills-list input[type="radio"] {
       accent-color: #7b61ff;
       width: 1.1em;
       height: 1.1em;
@@ -175,6 +176,19 @@
       return res.json();
     };
     let matricNumber = '', name = '', email = '';
+    function clearNotifications() {
+      document.getElementById('success-msg').style.display = 'none';
+      document.getElementById('error-msg').style.display = 'none';
+      document.getElementById('success-msg').innerText = '';
+      document.getElementById('error-msg').innerText = '';
+    }
+    function hideAllForms() {
+      const ids = ['matric-form','name-form','details-form','otp-form','skills-form'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+    }
     document.getElementById('matric-form').onsubmit = async e => {
       e.preventDefault();
       matricNumber = document.getElementById('matricNumber').value;
@@ -186,6 +200,7 @@
       if (res.name) {
         name = res.name;
         document.getElementById('name').value = name;
+        clearNotifications();
         e.target.style.display = 'none';
         document.getElementById('name-form').style.display = '';
         // If student details exist, prefill details form
@@ -199,9 +214,10 @@
     };
     document.getElementById('name-form').onsubmit = async e => {
       e.preventDefault();
-      await api('/student/confirm', { matricNumber, name });
-      e.target.style.display = 'none';
-      document.getElementById('details-form').style.display = '';
+  await api('/student/confirm', { matricNumber, name });
+  clearNotifications();
+  e.target.style.display = 'none';
+  document.getElementById('details-form').style.display = '';
     };
     document.getElementById('details-form').onsubmit = async e => {
       e.preventDefault();
@@ -211,9 +227,11 @@
       email = document.getElementById('email').value;
       const res = await api('/student/details', { matricNumber, department, faculty, phone, email });
       if (res.success) {
+        clearNotifications();
         e.target.style.display = 'none';
         document.getElementById('otp-form').style.display = '';
       } else if (res.error === 'Email already verified. No OTP sent.') {
+        clearNotifications();
         e.target.style.display = 'none';
         // Fetch skills from API and display as checkboxes
         const skillsRes = await fetch('/student/skills');
@@ -222,7 +240,7 @@
         skillsList.innerHTML = '';
         skills.forEach(skill => {
           const label = document.createElement('label');
-          label.innerHTML = `<input type="checkbox" value="${skill.code}"> ${skill.description}`;
+          label.innerHTML = `<input type="radio" name="skill" value="${skill.code}"> ${skill.description}`;
           skillsList.appendChild(label);
         });
         document.getElementById('skills-form').style.display = '';
@@ -235,6 +253,7 @@
       const otp = document.getElementById('otp').value;
       const res = await api('/student/verify-otp', { email, otp });
       if (res.verified) {
+        clearNotifications();
         e.target.style.display = 'none';
         // Fetch skills from API and display as checkboxes
         const skillsRes = await fetch('/student/skills');
@@ -242,9 +261,9 @@
         const skillsList = document.getElementById('skills-list');
         skillsList.innerHTML = '';
         skills.forEach(skill => {
-          // Display skill description, not the whole object
+          // Display skill description, single-select with radios
           const label = document.createElement('label');
-          label.innerHTML = `<input type="checkbox" value="${skill.code}"> ${skill.description}`;
+          label.innerHTML = `<input type="radio" name="skill" value="${skill.code}"> ${skill.description}`;
           skillsList.appendChild(label);
         });
         document.getElementById('skills-form').style.display = '';
@@ -254,10 +273,22 @@
     };
     document.getElementById('skills-form').onsubmit = async e => {
       e.preventDefault();
-      const checked = Array.from(document.querySelectorAll('#skills-list input:checked')).map(i => i.value);
-      const res = await api('/student/skills', { email, skills: checked });
-      if (res.success) showSuccess('Registration complete!');
-      else showError(res.error || 'Failed to save skills');
+      const selected = document.querySelector('#skills-list input[name="skill"]:checked');
+      if (!selected) {
+        showError('Please select a skill.');
+        return;
+      }
+      const res = await api('/student/skills', { email, skills: [selected.value] });
+      if (res.success) {
+        clearNotifications();
+        hideAllForms();
+        if (res.trainers && res.trainers.length) {
+          const lines = res.trainers.map(t => `${t.description} — Trainer: ${t.trainer || 'N/A'} (${t.phone || 'N/A'})`);
+          showSuccess(`Registration complete!\n\nPlease contact your trainer(s):\n${lines.join('\n')}`);
+        } else {
+          showSuccess('Registration complete! A confirmation email was sent with trainer details.');
+        }
+      } else showError(res.error || 'Failed to save skills');
     };
     function showSuccess(msg) {
       document.getElementById('success-msg').innerText = msg;

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { StudentService } from './student.service';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
@@ -61,8 +61,9 @@ export class StudentController {
                     pass: this.configService.get('GMAIL_PASS'),
                 },
             });
+            const senderName = this.configService.get('GMAIL_SENDER_NAME') || 'GSE Student Registration';
             await transporter.sendMail({
-                from: this.configService.get('GMAIL_USER'),
+                from: `${senderName} <${this.configService.get('GMAIL_USER')}>`,
                 to: email,
                 subject: 'Your OTP Code',
                 text: `Your OTP code is: ${otp}`,
@@ -91,8 +92,35 @@ export class StudentController {
     async setSkills(@Body() body: any) {
         const { email, skills } = body; // always use email as identifier
         try {
-            const student = await this.studentService.setSkills(email, skills);
-            return { success: !!student };
+            const result = await this.studentService.setSkills(email, skills);
+            const student = result && result.student;
+            const skillDocs = result && result.skillDocs;
+            if (student && skillDocs && skillDocs.length > 0) {
+                // Build a confirmation message listing trainers for chosen skills
+                const lines = skillDocs.map(s => `Skill: ${s.description} \n - Trainer: ${s.trainer || 'N/A'}\n - Phone: ${s.phone || 'N/A'}`);
+                const message = `Your skill selection is confirmed. Please contact your trainer(s):\n\n${lines.join('\n')}`;
+                // Send confirmation email
+                try {
+                    const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                            user: this.configService.get('GMAIL_USER'),
+                            pass: this.configService.get('GMAIL_PASS'),
+                        },
+                    });
+                    const senderName = this.configService.get('GMAIL_SENDER_NAME') || 'GSE Student Registration';
+                    await transporter.sendMail({
+                        from: `${senderName} <${this.configService.get('GMAIL_USER')}>`,
+                        to: email,
+                        subject: 'Skill Selection Confirmation & Trainer Details',
+                        text: message,
+                    });
+                } catch (mailErr) {
+                    console.error('Failed to send confirmation email:', mailErr.message || mailErr);
+                }
+            }
+            const trainers = (skillDocs || []).map(s => ({ code: s.code, description: s.description, trainer: s.trainer || null, phone: s.phone || null }));
+            return { success: !!student, trainers };
         } catch (err) {
             return { success: false, error: err.message };
         }

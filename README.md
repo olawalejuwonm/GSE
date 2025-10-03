@@ -138,3 +138,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+1. Update the skills in such a way that they can scroll and pick one
+2. Confirmation email detailing the trainer's name and phone number, asking them to reach out
+3. Are you a carry-over student? They should enter their name and matric number and email, otp should be sent and then go through the process of picking a skill
+4. Number that can pick a skill (awaiting)

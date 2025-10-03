@@ -25,7 +25,7 @@ export class StudentService {
     return this.studentModel.findOneAndUpdate(
       { matricNumber: data.matricNumber },
       { $set: data },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
   }
 
@@ -34,14 +34,19 @@ export class StudentService {
     return this.studentModel.findOneAndUpdate(
       { email: identifier },
       { $set: { otp, otpExpires: new Date(Date.now() + 10 * 60 * 1000) } },
-      { new: true }
+      { new: true },
     );
   }
 
   async verifyOtp(identifier: string, otp: string) {
     // Always use email for OTP
     const student = await this.studentModel.findOne({ email: identifier });
-    if (!student || student.otp !== otp || !student.otpExpires || student.otpExpires < new Date()) {
+    if (
+      !student ||
+      student.otp !== otp ||
+      !student.otpExpires ||
+      student.otpExpires < new Date()
+    ) {
       return false;
     }
     student.isEmailVerified = true;
@@ -63,23 +68,26 @@ export class StudentService {
     const skillDocs = await this.skillModel.find({ code: { $in: skills } });
     for (const skill of skillDocs) {
       if ((skill.selectedCount ?? 0) >= (skill.maxSelection ?? 144)) {
-        throw new Error(`Skill '${skill.description}' has reached the maximum number of selections.`);
+        throw new Error(
+          `Skill '${skill.description}' has reached the maximum number of selections.`,
+        );
       }
     }
     // Increment selectedCount for each selected skill
     await Promise.all(
-      skillDocs.map(skill =>
+      skillDocs.map((skill) =>
         this.skillModel.updateOne(
           { code: skill.code },
-          { $inc: { selectedCount: 1 } }
-        )
-      )
+          { $inc: { selectedCount: 1 } },
+        ),
+      ),
     );
-    return this.studentModel.findOneAndUpdate(
+    const updatedStudent = await this.studentModel.findOneAndUpdate(
       { email: identifier },
       { $set: { skills } },
-      { new: true }
+      { new: true },
     );
+    return { student: updatedStudent, skillDocs };
   }
 
   async getAllSkills(): Promise<Skill[]> {
