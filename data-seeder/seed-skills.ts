@@ -14,7 +14,7 @@ const SkillSchema = new mongoose.Schema({
   description: { type: String, required: true },
   trainer: String,
   phone: String,
-  maxSelection: { type: Number, default: 140 },
+  maxSelection: { type: Number, default: 120 },
   selectedCount: { type: Number, default: 0 },
 });
 
@@ -37,7 +37,7 @@ async function seedSkills() {
       try {
         await Skill.updateOne(
           { code },
-          { $set: { code, description, trainer, phone, maxSelection: 140 } },
+          { $set: { code, description, trainer, phone, maxSelection: 120 } },
           { upsert: true }
         );
         console.log(`Seeded: ${code} - ${description}`);
