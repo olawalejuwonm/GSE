@@ -330,7 +330,7 @@
         hideAllForms();
         if (res.trainers && res.trainers.length) {
           const lines = res.trainers.map(t => `${t.description} — Trainer: ${t.trainer || 'N/A'} (${t.phone || 'N/A'})`);
-          showSuccess(`Registration complete!\n\nPlease contact your trainer(s):\n${lines.join('\n')}`);
+          showSuccess(`Registration complete!\n\nA confirmation email was sent with trainer details.`);
         } else {
           showSuccess('Registration complete! A confirmation email was sent with trainer details.');
         }
