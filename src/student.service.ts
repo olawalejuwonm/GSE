@@ -75,13 +75,17 @@ export class StudentService {
           { code: skill.code, $expr: { $lt: ['$selectedCount', '$maxSelection'] } },
           { $inc: { selectedCount: 1 } },
         );
-        // If no document matched the conditional, it means it's at max
-        if (res.modifiedCount === 0 && res.matchedCount === 0) {
-          // Try an alternative query: matched but not incremented
+        // If update didn't modify anything, re-check the current document to determine why
+        if (res.modifiedCount === 0) {
           const fresh = await this.skillModel.findOne({ code: skill.code }).lean();
+          if (!fresh) {
+            throw new Error(`Skill '${skill.code}' not found when attempting to increment.`);
+          }
           if ((fresh.selectedCount ?? 0) >= (fresh.maxSelection ?? 140)) {
             throw new Error(`Skill '${skill.description}' has reached the maximum number of selections.`);
           }
+          // If we reach here it means the conditional update simply didn't apply; throw a generic error
+          throw new Error(`Failed to increment selection for skill '${skill.description}'. Please try again.`);
         }
         incremented.push(skill.code);
       }
