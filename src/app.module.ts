@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { Student, StudentSchema } from './student.schema';
 import { StudentService } from './student.service';
 import { StudentController } from './student.controller';
+import { MailerService } from './mailer.service';
 import { Skill, SkillSchema } from './skill.schema';
 
 @Module({
@@ -19,6 +20,6 @@ import { Skill, SkillSchema } from './skill.schema';
     ]),
   ],
   controllers: [AppController, StudentController],
-  providers: [AppService, StudentService],
+  providers: [AppService, StudentService, MailerService],
 })
 export class AppModule {}
