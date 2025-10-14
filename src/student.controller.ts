@@ -10,6 +10,44 @@ export class StudentController {
         private readonly configService: ConfigService,
     ) { }
 
+    // Lazily-initialized shared transporter to avoid creating a new SMTP connection per request
+    // Use a loose type here to avoid issues if typings are not installed for nodemailer in the project.
+    private transporter: any | null = null;
+
+    private getTransporter(): any | null {
+        if (this.transporter) return this.transporter;
+
+    const user = this.configService.get('GMAIL_USER');
+    const pass = this.configService.get('GMAIL_PASS');
+        if (!user || !pass) {
+            // SMTP not configured; return null and callers should handle absence
+            console.warn('GMAIL_USER or GMAIL_PASS not set; email sending disabled');
+            return null;
+        }
+
+        this.transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user, pass },
+            // Do not pool by default here; nodemailer will manage connections efficiently.
+            // If you want pooling, enable it explicitly and tune pool options.
+        });
+        return this.transporter;
+    }
+
+    private async sendMail(mailOptions: nodemailer.SendMailOptions) {
+        const transporter = this.getTransporter();
+        if (!transporter) {
+            // Fail gracefully when SMTP isn't configured
+            console.warn('Transporter not available. Mail not sent:', mailOptions);
+            return;
+        }
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (err) {
+            console.error('Failed to send email:', err?.message || err);
+        }
+    }
+
     @Post('matric')
     async enterMatric(@Body('matricNumber') matricNumber: string) {
         // Only fetch, do not create student
@@ -55,16 +93,9 @@ export class StudentController {
         if (email && (!student.isEmailVerified)) {
             const otp = this.studentService.generateOtp();
             await this.studentService.setOtp(email, otp);
-            // Send OTP email
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: this.configService.get('GMAIL_USER'),
-                    pass: this.configService.get('GMAIL_PASS'),
-                },
-            });
+            // Send OTP email using shared transporter
             const senderName = this.configService.get('GMAIL_SENDER_NAME') || 'GSE Student Registration';
-            await transporter.sendMail({
+            await this.sendMail({
                 from: `${senderName} <${this.configService.get('GMAIL_USER')}>`,
                 to: email,
                 subject: 'Your OTP Code',
@@ -102,24 +133,14 @@ export class StudentController {
                 const lines = skillDocs.map(s => `Skill: ${s.description} \n - Trainer: ${s.trainer || 'N/A'}\n - Phone: ${s.phone || 'N/A'}`);
                 const message = `Your skill selection is confirmed. Please contact your trainer(s):\n\n${lines.join('\n')}`;
                 // Send confirmation email
-                try {
-                    const transporter = nodemailer.createTransport({
-                        service: 'gmail',
-                        auth: {
-                            user: this.configService.get('GMAIL_USER'),
-                            pass: this.configService.get('GMAIL_PASS'),
-                        },
-                    });
-                    const senderName = this.configService.get('GMAIL_SENDER_NAME') || 'GSE Student Registration';
-                    await transporter.sendMail({
-                        from: `${senderName} <${this.configService.get('GMAIL_USER')}>`,
-                        to: email,
-                        subject: 'Skill Selection Confirmation & Trainer Details',
-                        text: message,
-                    });
-                } catch (mailErr) {
-                    console.error('Failed to send confirmation email:', mailErr.message || mailErr);
-                }
+                // Send confirmation email using shared transporter. sendMail handles errors internally.
+                const senderName = this.configService.get('GMAIL_SENDER_NAME') || 'GSE Student Registration';
+                await this.sendMail({
+                    from: `${senderName} <${this.configService.get('GMAIL_USER')}>`,
+                    to: email,
+                    subject: 'Skill Selection Confirmation & Trainer Details',
+                    text: message,
+                });
             }
             const trainers = (skillDocs || []).map(s => ({ code: s.code, description: s.description, trainer: s.trainer || null, phone: s.phone || null }));
             return { success: !!student, trainers };
