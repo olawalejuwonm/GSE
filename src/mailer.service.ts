@@ -36,6 +36,7 @@ export class MailerService {
     if (gmailUser && gmailPass) {
       this.transporter = nodemailer.createTransport({
         service: 'gmail',
+        pool: true,
         auth: { user: gmailUser, pass: gmailPass },
       });
       return this.transporter;
