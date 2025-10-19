@@ -41,7 +41,13 @@ export class StudentController {
 
   @Post('details')
   async enterDetails(@Body() body: any) {
-    const { matricNumber, department, faculty, phone, email } = body;
+    const { matricNumber, department, faculty, phone, email, isSubscribed } = body;
+    // NOTE: isSubscribed is a client-side acknowledgement. This check enforces
+    // that the client confirmed subscription, but it is not authoritative.
+    // For a secure, server-verified check, implement OAuth + YouTube Data API.
+    if (!isSubscribed) {
+      return { error: 'You must subscribe to the YouTube channel before registering.' };
+    }
     // Check for duplicate email (if provided)
     if (email) {
       const existing = await this.studentService.findByEmail(email);

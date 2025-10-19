@@ -125,7 +125,30 @@
 <body>
   <div class="container">
     <h2>Student Registration</h2>
-    <div id="start-screen" style="text-align:center; margin-bottom:1rem;">
+    <!-- YouTube subscription gate -->
+    <div id="youtube-gate" style="text-align:center; margin-bottom:1rem;">
+      <p style="font-weight:700; color:#2d3a5a;">Please subscribe to our YouTube channel to continue</p>
+      <div style="display:flex; gap:0.6rem; justify-content:center; align-items:center; flex-direction:column;">
+        <a id="channel-link" href="https://youtube.com/@unilorintechub?si=ZD4M-ZmXki3OO4A8" target="_blank" rel="noopener" style="text-decoration:none; color:inherit;">
+          <div style="padding:0.8rem 1rem; border-radius:10px; background:#fff; box-shadow:0 2px 8px #0001; display:flex; gap:0.6rem; align-items:center;">
+            <img src="https://s.ytimg.com/yts/img/favicon-vfl8qSV2F.ico" alt="YouTube" style="width:40px;height:40px;border-radius:6px;" />
+            <div style="text-align:left">
+              <div style="font-weight:700">UniLorin TechHub</div>
+              <div style="font-size:0.9rem; color:#555">https://youtube.com/@unilorintechub</div>
+            </div>
+          </div>
+        </a>
+        <div style="margin-top:0.6rem; display:flex; gap:0.6rem;">
+          <button id="open-channel" type="button" style="padding:0.45rem 0.9rem;">Open channel</button>
+          <button id="i-subscribed" type="button" style="padding:0.45rem 0.9rem;">I've subscribed</button>
+        </div>
+        <div style="margin-top:0.6rem; font-size:0.9rem; color:#666;">
+          You will be asked to confirm before continuing. This is MANDATORY to be able to register.
+        </div>
+      </div>
+    </div>
+
+    <div id="start-screen" style="text-align:center; margin-bottom:1rem; display:none;">
       <p style="font-weight:600; color:#2d3a5a;">Are you a carry-over student?</p>
       <div style="display:flex; gap:0.6rem; justify-content:center;">
         <button id="start-yes" type="button" style="padding:0.6rem 1rem;">Yes</button>
@@ -185,6 +208,9 @@
     };
   let matricNumber = '', name = '', email = '';
   let isCarryOver = false;
+    // Track subscription state (client-side acknowledgement)
+    const SUB_KEY = 'gse_isSubscribed_v1';
+    let isSubscribed = localStorage.getItem(SUB_KEY) === 'true';
     function clearNotifications() {
       document.getElementById('success-msg').style.display = 'none';
       document.getElementById('error-msg').style.display = 'none';
@@ -213,6 +239,53 @@
       document.getElementById('matric-form').style.display = '';
       document.getElementById('name').readOnly = true;
     });
+
+    // YouTube gate handlers
+    function revealStartIfSubscribed() {
+      if (isSubscribed) {
+        document.getElementById('youtube-gate').style.display = 'none';
+        document.getElementById('start-screen').style.display = '';
+      } else {
+        document.getElementById('youtube-gate').style.display = '';
+        document.getElementById('start-screen').style.display = 'none';
+      }
+    }
+
+    document.getElementById('open-channel').addEventListener('click', () => {
+      // Open the channel in a new tab/window. The user may subscribe there.
+      // We'll detect when the user returns (via visibilitychange/focus) and then show a confirmation prompt.
+      const win = window.open(document.getElementById('channel-link').href, '_blank');
+      // On focus/visibility, suggest the user confirm they've subscribed
+      const onReturn = () => {
+        // If already subscribed, no-op
+        if (isSubscribed) return onDone();
+        const ok = confirm('Did you subscribe to the UniLorin TechHub channel? Click OK to confirm.');
+        if (ok) {
+          isSubscribed = true;
+          localStorage.setItem(SUB_KEY, 'true');
+          revealStartIfSubscribed();
+        }
+        onDone();
+      };
+      const onDone = () => {
+        window.removeEventListener('focus', onReturn);
+        document.removeEventListener('visibilitychange', onReturn);
+        if (win && !win.closed) try { win.close(); } catch(e) {}
+      };
+      window.addEventListener('focus', onReturn);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) onReturn();
+      });
+    });
+
+    document.getElementById('i-subscribed').addEventListener('click', () => {
+      isSubscribed = true;
+      localStorage.setItem(SUB_KEY, 'true');
+      revealStartIfSubscribed();
+    });
+
+    // Initialize gate visibility on load
+    revealStartIfSubscribed();
     document.getElementById('matric-form').onsubmit = async e => {
       e.preventDefault();
       matricNumber = document.getElementById('matricNumber').value;
@@ -271,7 +344,11 @@
       const faculty = document.getElementById('faculty').value;
       const phone = document.getElementById('phone').value;
       email = document.getElementById('email').value;
-      const res = await api('/student/details', { matricNumber, department, faculty, phone, email });
+      if (!isSubscribed) {
+        showError('You must subscribe to the YouTube channel before registering.');
+        return;
+      }
+      const res = await api('/student/details', { matricNumber, department, faculty, phone, email, isSubscribed });
       if (res.success) {
         clearNotifications();
         e.target.style.display = 'none';
