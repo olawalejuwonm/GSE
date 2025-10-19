@@ -66,15 +66,32 @@ export class StudentController {
     if (email && !student.isEmailVerified) {
       const otp = this.studentService.generateOtp();
       await this.studentService.setOtp(email, otp);
-      // Send OTP email using shared transporter
+      // Send OTP email using shared transporter with a simple HTML template
       const senderName =
         this.configService.get('GMAIL_SENDER_NAME') ||
         'GSE Student Registration';
+      const html = `
+        <div style="font-family:Segoe UI, Arial, sans-serif; color:#222;">
+          <div style="background:linear-gradient(90deg,#7b61ff,#4f8cff); padding:18px; border-radius:8px; color:#fff; text-align:center;">
+            <h2 style="margin:0; font-size:18px;">GSE Student Registration</h2>
+          </div>
+          <div style="padding:18px; background:#fff; border:1px solid #eee; border-top:0; border-radius:0 0 8px 8px;">
+            <p style="font-size:15px; margin:0 0 8px 0;">Hello,</p>
+            <p style="margin:0 0 12px 0; color:#333;">Use the code below to complete your registration. The code expires in 10 minutes.</p>
+            <div style="display:flex; align-items:center; justify-content:center;">
+              <div style="font-weight:700; font-size:24px; letter-spacing:2px; background:#f6f7ff; padding:10px 18px; border-radius:6px; border:1px solid #e6e9ff;">${otp}</div>
+            </div>
+            <p style="margin-top:14px; color:#666; font-size:13px;">If you didn't request this, ignore this email.</p>
+            <hr style="border:none; border-top:1px solid #eee; margin:14px 0;" />
+          </div>
+        </div>
+      `;
       await this.mailer.sendMail({
         from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
         to: email,
         subject: 'Your OTP Code',
         text: `Your OTP code is: ${otp}`,
+        html,
       });
     } else if (email && student.isEmailVerified) {
       return { error: 'Email already verified. No OTP sent.' };
@@ -110,6 +127,27 @@ export class StudentController {
             `Skill: ${s.description} \n - Trainer: ${s.trainer || 'N/A'}\n - Phone: ${s.phone || 'N/A'}`,
         );
         const message = `Your skill selection is confirmed. Please contact your trainer(s):\n\n${lines.join('\n')}`;
+        const html = `
+          <div style="font-family:Segoe UI, Arial, sans-serif; color:#222;">
+            <div style="background:linear-gradient(90deg,#7b61ff,#4f8cff); padding:16px; border-radius:8px; color:#fff; text-align:center;">
+              <h2 style="margin:0; font-size:18px;">Skill Selection Confirmed</h2>
+            </div>
+            <div style="padding:14px; background:#fff; border:1px solid #eee; border-top:0; border-radius:0 0 8px 8px;">
+              <p style="margin:0 0 8px 0;">Hello,</p>
+              <p style="margin:0 0 10px 0; color:#333;">Your skill selection has been recorded. Below are your trainer details:</p>
+              <ul style="padding-left:18px; color:#333;">
+                ${skillDocs
+                  .map(
+                    (s) =>
+                      `<li style="margin-bottom:8px;"><strong>${s.description}</strong><br/>Trainer: ${s.trainer || 'N/A'}<br/>Phone: ${s.phone || 'N/A'}</li>`,
+                  )
+                  .join('')}
+              </ul>
+              <p style="font-size:13px; color:#666;">Please contact your trainer to proceed.</p>
+              <hr style="border:none; border-top:1px solid #eee; margin:12px 0;" />
+            </div>
+          </div>
+        `;
         // Send confirmation email
         // Send confirmation email using shared transporter. sendMail handles errors internally.
         const senderName =
@@ -120,6 +158,7 @@ export class StudentController {
           to: email,
           subject: 'Skill Selection Confirmation & Trainer Details',
           text: message,
+          html,
         });
       }
       const trainers = (skillDocs || []).map((s) => ({
