@@ -116,7 +116,7 @@ export class StudentController {
           this.configService.get('GMAIL_SENDER_NAME') ||
           'GSE Student Registration';
         await this.mailer.sendMail({
-          from: `${senderName} <${this.configService.get('GMAIL_USER')}>`,
+          from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
           to: email,
           subject: 'Skill Selection Confirmation & Trainer Details',
           text: message,
