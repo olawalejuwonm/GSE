@@ -48,6 +48,13 @@ export class StudentController {
     if (!isSubscribed) {
       return { error: 'You must subscribe to the YouTube channel before registering.' };
     }
+    // Validate email format
+    if (email) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email)) {
+        return { error: 'Please enter a valid email address.' };
+      }
+    }
     // Check for duplicate email (if provided)
     if (email) {
       const existing = await this.studentService.findByEmail(email);
