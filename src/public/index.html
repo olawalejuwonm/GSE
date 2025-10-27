@@ -244,9 +244,10 @@
           showError('📡 No internet connection. Please check your network and try again.');
           return { error: 'No internet connection' };
         }
-        // If fetch fails but user is online, it's likely a server timeout or server unreachable
-        showError('⏱️ Please be patient! The server is taking longer to respond. This may happen due to email verification or high load. Feel free to try again.');
-        return { error: 'Request timeout or server unreachable' };
+        // If fetch fails but user is online, treat it as a real server timeout/issue
+        // Show a friendly message and stop further handling by throwing
+        showError('⏱️ Please be patient! The server is taking longer to respond. This may happen due to email verification or high load. You can try again shortly.');
+        throw new Error('__server_timeout__');
       }
     };
   let matricNumber = '', name = '', email = '';
