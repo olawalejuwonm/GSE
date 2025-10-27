@@ -223,32 +223,30 @@
       console.log('API call:', url, data, method); // Log to browser console
       showLoading(true);
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-        
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
-          body: method === 'POST' ? JSON.stringify(data) : undefined,
-          signal: controller.signal
+          body: method === 'POST' ? JSON.stringify(data) : undefined
         });
         
-        clearTimeout(timeoutId);
         const json = await res.json();
         showLoading(false);
-        return json;
+       
+         // Check if server returned a timeout or slow processing indicator
+         if (json.error && (json.error.includes('timeout') || json.error.includes('took too long'))) {
+           showError('⏱️ Please be patient! The server is processing your request. This may take a moment due to email verification. Feel free to try again.');
+         }
+       
+         return json;
       } catch (err) {
         showLoading(false);
-        if (err.name === 'AbortError') {
-          showError('⏱️ Please be patient! The server is processing your request. This may take a moment due to email verification. Feel free to try again.');
-          return { error: 'Request timeout' };
-        }
         if (!navigator.onLine) {
           showError('📡 No internet connection. Please check your network and try again.');
           return { error: 'No internet connection' };
         }
-        showError('❌ Network error. Please check your connection and try again.');
-        throw err;
+        // If fetch fails but user is online, it's likely a server timeout or server unreachable
+        showError('⏱️ Please be patient! The server is taking longer to respond. This may happen due to email verification or high load. Feel free to try again.');
+        return { error: 'Request timeout or server unreachable' };
       }
     };
   let matricNumber = '', name = '', email = '';
