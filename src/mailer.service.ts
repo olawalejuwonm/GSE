@@ -7,10 +7,10 @@ export class MailerService {
   private transporter: any | null = null;
   private sendQueue: Promise<any> = Promise.resolve();
   private lastSendTime = 0;
-  private readonly MIN_SEND_INTERVAL = 3000; // 3 seconds between emails (reduced rate)
+  private readonly MIN_SEND_INTERVAL = 9000; // 3 seconds between emails (reduced rate)
   private emailsSentInLastMinute = 0;
   private minuteResetTime = Date.now();
-  private readonly MAX_EMAILS_PER_MINUTE = 10; // Gmail safe limit
+  private readonly MAX_EMAILS_PER_MINUTE = 5; // Gmail safe limit
 
   constructor(private readonly configService: ConfigService) {}
 
