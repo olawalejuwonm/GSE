@@ -16,7 +16,26 @@ const SkillSchema = new mongoose.Schema({
   phone: String,
   maxSelection: { type: Number, default: 120 },
   selectedCount: { type: Number, default: 0 },
+  hidden: { type: Boolean, default: false },
 });
+const HIDDEN_DESCRIPTIONS = [
+  'Indoor Catering Service',
+  'Toiletries Production (B)',
+  'Powdered Detergent/ Shampoo Making',
+  'Toilet Cleaner/ Distilled/ Deionized Water Production',
+  'Bead Making & Wire Works',
+  'Shoe and Belt Making (A)',
+  'Shoe and Belt Making (B)',
+  'Tye & dye (B)',
+  'Indigenous Snacks Production',
+  'Printing Work, Branding & Graphic Design (B)',
+  'Glass blowing',
+  'Glass Design',
+  'Waste Management and Recycling A',
+  'Animal Feed Formulation',
+  'Tye & dye (A)',
+  'Domestic Animal Rearing',
+];
 
 async function seedSkills() {
   await mongoose.connect(MONGODB_URI);
@@ -28,26 +47,42 @@ async function seedSkills() {
     const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
 
     for (let i = 1; i < rows.length; i++) {
-      const row = rows[i] as unknown as any[];
+      const row = rows[i] as any[];
       if (!row[1] || !row[2]) continue; // skip if no code or description
       const code = String(row[1]).trim();
       const description = String(row[2]).trim();
       const trainer = row[3] ? String(row[3]).trim() : '';
       const phone = row[4] ? String(row[4]).trim() : '';
       try {
+        const isHidden = HIDDEN_DESCRIPTIONS.some(
+          (d) => d.toLowerCase() === description.toLowerCase(),
+        );
         await Skill.updateOne(
           { code },
-          { $set: { code, description, trainer, phone, maxSelection: 120 } },
-          { upsert: true }
+          {
+            $set: {
+              code,
+              description,
+              trainer,
+              phone,
+              maxSelection: 120,
+              hidden: isHidden,
+            },
+          },
+          { upsert: true },
         );
         console.log(`Seeded: ${code} - ${description}`);
       } catch (err) {
-        console.error(`Error seeding ${code}:`, err.message);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`Error seeding ${code}:`, msg);
       }
     }
   } catch (err) {
-    console.error(`Failed to read Excel file at '${EXCEL_PATH}':`, err.message || err);
-    console.error('Tip: if your filename contains spaces or special characters, enclose it in quotes.');
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`Failed to read Excel file at '${EXCEL_PATH}':`, msg);
+    console.error(
+      'Tip: if your filename contains spaces or special characters, enclose it in quotes.',
+    );
     await mongoose.disconnect();
     process.exit(1);
   }
@@ -55,4 +90,4 @@ async function seedSkills() {
   console.log('Skill seeding complete.');
 }
 
-seedSkills();
+void seedSkills();
