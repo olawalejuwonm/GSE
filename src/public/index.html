@@ -401,29 +401,48 @@
         showError('You must subscribe to the YouTube channel before registering.');
         return;
       }
-      const res = await api('/student/details', { matricNumber, department, faculty, phone, email, isSubscribed });
-      if (res.success) {
-        clearNotifications();
-        e.target.style.display = 'none';
-        document.getElementById('otp-form').style.display = '';
-      } else if (res.error === 'Email already verified. No OTP sent.') {
-        clearNotifications();
-        e.target.style.display = 'none';
-        // Fetch skills from API and display as checkboxes
-        showLoading(true);
-        const skillsRes = await fetch('/student/skills');
-        const skills = (await skillsRes.json()).skills;
-        showLoading(false);
-        const skillsList = document.getElementById('skills-list');
-        skillsList.innerHTML = '';
-        skills.forEach(skill => {
-          const label = document.createElement('label');
-          label.innerHTML = `<input type="radio" name="skill" value="${skill.code}"> ${skill.description}`;
-          skillsList.appendChild(label);
-        });
-        document.getElementById('skills-form').style.display = '';
-      } else {
-        showError(res.error || 'Failed to send OTP');
+
+      // Optimistic UI: show OTP form immediately without waiting for server response
+      clearNotifications();
+      e.target.style.display = 'none';
+      document.getElementById('otp-form').style.display = '';
+      showSuccess('We\'re sending your OTP email now. You can enter the code as soon as it arrives.');
+
+      // Send details request in the background (non-blocking)
+      try {
+        const res = await fetch('/student/details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ matricNumber, department, faculty, phone, email, isSubscribed })
+        }).then(r => r.json());
+
+        if (res && res.error === 'Email already verified. No OTP sent.') {
+          // Skip OTP; go straight to skills selection
+          clearNotifications();
+          showLoading(true);
+          const skillsRes = await fetch('/student/skills');
+          const skills = (await skillsRes.json()).skills;
+          showLoading(false);
+          const skillsList = document.getElementById('skills-list');
+          skillsList.innerHTML = '';
+          skills.forEach(skill => {
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="radio" name="skill" value="${skill.code}"> ${skill.description}`;
+            skillsList.appendChild(label);
+          });
+          document.getElementById('otp-form').style.display = 'none';
+          document.getElementById('skills-form').style.display = '';
+        } else if (res && res.error && !res.success) {
+          // Keep OTP form visible; show friendly error
+          showError(res.error || 'Failed to send OTP email. You can still enter the code if you received it.');
+        }
+      } catch (err) {
+        // Network/server issue; keep OTP form accessible
+        if (!navigator.onLine) {
+          showError('📡 No internet connection. You can still enter your OTP if you already have it.');
+        } else {
+          showError('We\'re having trouble sending the email right now, but you can still enter your OTP if you already have it.');
+        }
       }
     };
     document.getElementById('otp-form').onsubmit = async e => {
