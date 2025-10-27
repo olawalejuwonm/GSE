@@ -212,13 +212,14 @@ export class StudentController {
           </div>
         </div>
       `;
-      await this.mailer.sendMail({
-        from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
-        to: email,
-        subject: 'Your OTP Code',
-        text: `Your OTP code is: ${otp}`,
-        html,
-      });
+      // await this.mailer.sendMail({
+      //   from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
+      //   to: email,
+      //   subject: 'Your OTP Code',
+      //   text: `Your OTP code is: ${otp}`,
+      //   html,
+      // });
+      
     } else if (email && student.isEmailVerified) {
       return { error: 'Email already verified. No OTP sent.' };
     }
@@ -290,13 +291,13 @@ export class StudentController {
         const senderName =
           this.configService.get<string>('GMAIL_SENDER_NAME') ||
           'GSE Student Registration';
-        await this.mailer.sendMail({
-          from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
-          to: email,
-          subject: 'Skill Selection Confirmation & Trainer Details',
-          text: message,
-          html,
-        });
+        // await this.mailer.sendMail({
+        //   from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
+        //   to: email,
+        //   subject: 'Skill Selection Confirmation & Trainer Details',
+        //   text: message,
+        //   html,
+        // });
       }
       const trainers = ((skillDocs ?? []) as SkillDocLike[]).map(
         (s: SkillDocLike) => ({
