@@ -10,7 +10,6 @@ import { MailerService } from './mailer.service';
 import { Skill, SkillSchema } from './skill.schema';
 
 @Module({
-
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(process.env.MONGODB_URI || ''),

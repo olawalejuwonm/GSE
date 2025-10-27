@@ -18,7 +18,9 @@ export class StudentController {
     private readonly mailer: MailerService,
   ) {}
 
-  private async validateEmail(email: string): Promise<{ valid: boolean; error?: string }> {
+  private async validateEmail(
+    email: string,
+  ): Promise<{ valid: boolean; error?: string }> {
     // Basic format validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
@@ -27,14 +29,27 @@ export class StudentController {
 
     // Extract domain
     const domain = email.split('@')[1].toLowerCase();
-    
+
     // Known valid email providers and educational domains
     const validDomains = [
-      'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com',
-      'icloud.com', 'aol.com', 'protonmail.com', 'zoho.com', 'yandex.com',
-      'mail.com', 'gmx.com', 'tutanota.com', 'fastmail.com',
+      'gmail.com',
+      'yahoo.com',
+      'outlook.com',
+      'hotmail.com',
+      'live.com',
+      'icloud.com',
+      'aol.com',
+      'protonmail.com',
+      'zoho.com',
+      'yandex.com',
+      'mail.com',
+      'gmx.com',
+      'tutanota.com',
+      'fastmail.com',
       // Educational domains
-      'unilorin.edu.ng', 'student.unilorin.edu.ng', 'pg.unilorin.edu.ng'
+      'unilorin.edu.ng',
+      'student.unilorin.edu.ng',
+      'pg.unilorin.edu.ng',
     ];
 
     // Check if domain is in known valid list
@@ -55,13 +70,20 @@ export class StudentController {
       { typo: 'hotmal.com', correct: 'hotmail.com' },
     ];
 
-    const typo = commonTypos.find(t => t.typo === domain);
+    const typo = commonTypos.find((t) => t.typo === domain);
     if (typo) {
-      return { valid: false, error: `Did you mean ${email.replace(domain, typo.correct)}?` };
+      return {
+        valid: false,
+        error: `Did you mean ${email.replace(domain, typo.correct)}?`,
+      };
     }
 
     // Check for valid educational domain pattern
-    if (domain.endsWith('.edu') || domain.endsWith('.edu.ng') || domain.endsWith('.ac.ng')) {
+    if (
+      domain.endsWith('.edu') ||
+      domain.endsWith('.edu.ng') ||
+      domain.endsWith('.ac.ng')
+    ) {
       return { valid: true };
     }
 
@@ -73,10 +95,16 @@ export class StudentController {
         return { valid: true };
       }
     } catch (err) {
-      return { valid: false, error: 'Invalid email domain. Please check and try again.' };
+      return {
+        valid: false,
+        error: 'Invalid email domain. Please check and try again.',
+      };
     }
 
-    return { valid: false, error: 'Email domain not recognized. Please use a valid email provider.' };
+    return {
+      valid: false,
+      error: 'Email domain not recognized. Please use a valid email provider.',
+    };
   }
 
   @Post('matric')
@@ -109,12 +137,15 @@ export class StudentController {
 
   @Post('details')
   async enterDetails(@Body() body: any) {
-    const { matricNumber, department, faculty, phone, email, isSubscribed } = body;
+    const { matricNumber, department, faculty, phone, email, isSubscribed } =
+      body;
     // NOTE: isSubscribed is a client-side acknowledgement. This check enforces
     // that the client confirmed subscription, but it is not authoritative.
     // For a secure, server-verified check, implement OAuth + YouTube Data API.
     if (!isSubscribed) {
-      return { error: 'You must subscribe to the YouTube channel before registering.' };
+      return {
+        error: 'You must subscribe to the YouTube channel before registering.',
+      };
     }
     // Validate email format and domain
     if (email) {
@@ -204,7 +235,7 @@ export class StudentController {
       const skillDocs = result && result.skillDocs;
       if (result && result.alreadyRegistered) {
         // Student had already registered; return trainers without changing selection
-        const typedSkills = ((skillDocs ?? []) as SkillDocLike[]);
+        const typedSkills = (skillDocs ?? []) as SkillDocLike[];
         const trainers = typedSkills.map((s: SkillDocLike) => ({
           code: s.code,
           description: s.description,
@@ -254,12 +285,14 @@ export class StudentController {
           html,
         });
       }
-      const trainers = ((skillDocs ?? []) as SkillDocLike[]).map((s: SkillDocLike) => ({
-        code: s.code,
-        description: s.description,
-        trainer: s.trainer ?? null,
-        phone: s.phone ?? null,
-      }));
+      const trainers = ((skillDocs ?? []) as SkillDocLike[]).map(
+        (s: SkillDocLike) => ({
+          code: s.code,
+          description: s.description,
+          trainer: s.trainer ?? null,
+          phone: s.phone ?? null,
+        }),
+      );
       return { success: !!student, trainers };
     } catch (err) {
       return { success: false, error: err.message };

@@ -81,20 +81,31 @@ export class StudentService {
     try {
       for (const skill of skillDocs) {
         const res = await this.skillModel.updateOne(
-          { code: skill.code, $expr: { $lt: ['$selectedCount', '$maxSelection'] } },
+          {
+            code: skill.code,
+            $expr: { $lt: ['$selectedCount', '$maxSelection'] },
+          },
           { $inc: { selectedCount: 1 } },
         );
         // If update didn't modify anything, re-check the current document to determine why
         if (res.modifiedCount === 0) {
-          const fresh = await this.skillModel.findOne({ code: skill.code }).lean();
+          const fresh = await this.skillModel
+            .findOne({ code: skill.code })
+            .lean();
           if (!fresh) {
-            throw new Error(`Skill '${skill.code}' not found when attempting to increment.`);
+            throw new Error(
+              `Skill '${skill.code}' not found when attempting to increment.`,
+            );
           }
           if ((fresh.selectedCount ?? 0) >= (fresh.maxSelection ?? 120)) {
-            throw new Error(`Skill '${skill.description}' has reached the maximum number of selections.`);
+            throw new Error(
+              `Skill '${skill.description}' has reached the maximum number of selections.`,
+            );
           }
           // If we reach here it means the conditional update simply didn't apply; throw a generic error
-          throw new Error(`Failed to increment selection for skill '${skill.description}'. Please try again.`);
+          throw new Error(
+            `Failed to increment selection for skill '${skill.description}'. Please try again.`,
+          );
         }
         incremented.push(skill.code);
       }
@@ -102,7 +113,12 @@ export class StudentService {
       // Rollback any increments we did
       if (incremented.length > 0) {
         await Promise.all(
-          incremented.map(code => this.skillModel.updateOne({ code }, { $inc: { selectedCount: -1 } })),
+          incremented.map((code) =>
+            this.skillModel.updateOne(
+              { code },
+              { $inc: { selectedCount: -1 } },
+            ),
+          ),
         );
       }
       throw err;
