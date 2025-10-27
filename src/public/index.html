@@ -234,7 +234,7 @@
        
          // Check if server returned a timeout or slow processing indicator
          if (json.error && (json.error.includes('timeout') || json.error.includes('took too long'))) {
-           showError('⏱️ Please be patient! The server is processing your request. This may take a moment due to email verification. Feel free to try again.');
+           showError('Avoiding requesting multiple times: Check your spam/junk folder for the OTP email. ⏱️ Please be patient! The server is processing your request. This may take a moment due to email verification. Feel free to try again.');
          }
        
          return json;
