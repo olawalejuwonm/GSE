@@ -223,16 +223,31 @@
       console.log('API call:', url, data, method); // Log to browser console
       showLoading(true);
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+        
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
-          body: method === 'POST' ? JSON.stringify(data) : undefined
+          body: method === 'POST' ? JSON.stringify(data) : undefined,
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         const json = await res.json();
         showLoading(false);
         return json;
       } catch (err) {
         showLoading(false);
+        if (err.name === 'AbortError') {
+          showError('⏱️ Please be patient! The server is processing your request. This may take a moment due to email verification. Feel free to try again.');
+          return { error: 'Request timeout' };
+        }
+        if (!navigator.onLine) {
+          showError('📡 No internet connection. Please check your network and try again.');
+          return { error: 'No internet connection' };
+        }
+        showError('❌ Network error. Please check your connection and try again.');
         throw err;
       }
     };
