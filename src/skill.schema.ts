@@ -16,7 +16,6 @@ export class Skill extends Document {
   phone?: string;
 
   @Prop({ default: 120 })
-  @Prop({ default: 120 })
   maxSelection?: number;
 
   @Prop({ default: 0 })

@@ -33,17 +33,17 @@ export class StudentService {
     // Always use email for OTP
     // Do not regenerate if already set; remove expiry if present
     const student = await this.studentModel.findOne({ email: identifier });
-    if (!student) return null as any;
+    if (!student) return null;
     if (student.otp && String(student.otp).trim().length > 0) {
       // Ensure no expiry is enforced going forward
       if (student.otpExpires) {
-        (student as any).otpExpires = undefined;
+        student.otpExpires = undefined;
         await student.save();
       }
       return student;
     }
     student.otp = otp;
-    (student as any).otpExpires = undefined;
+    student.otpExpires = undefined;
     await student.save();
     return student;
   }
@@ -56,7 +56,7 @@ export class StudentService {
     }
     student.isEmailVerified = true;
     // Do not clear OTP; keep it reusable. Also ensure no expiry is set.
-    (student as any).otpExpires = undefined;
+    student.otpExpires = undefined;
     await student.save();
     return true;
   }

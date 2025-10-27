@@ -31,7 +31,7 @@ export class Student extends Document {
   otp: string;
 
   @Prop()
-  otpExpires: Date;
+  otpExpires?: Date;
 
   @Prop()
   firstname?: string;

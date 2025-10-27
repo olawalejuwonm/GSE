@@ -4,8 +4,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MailerService {
-  private transporter: any | null = null;
-  private sendQueue: Promise<any> = Promise.resolve();
+  private transporter: nodemailer.Transporter | null = null;
+  private sendQueue: Promise<void> = Promise.resolve();
   private lastSendTime = 0;
   private readonly MIN_SEND_INTERVAL = 9000; // 3 seconds between emails (reduced rate)
   private emailsSentInLastMinute = 0;
@@ -14,15 +14,15 @@ export class MailerService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  private getTransporter(): any | null {
+  private getTransporter(): nodemailer.Transporter | null {
     if (this.transporter) return this.transporter;
 
-    const providerRaw = this.configService.get('SMTP_PROVIDER');
+    const providerRaw = this.configService.get<string>('SMTP_PROVIDER');
     const provider = providerRaw ? providerRaw.toString().toLowerCase() : '';
-    const zohoUser = this.configService.get('ZOHO_USER');
-    const zohoPass = this.configService.get('ZOHO_PASS');
-    const gmailUser = this.configService.get('GMAIL_USER');
-    const gmailPass = this.configService.get('GMAIL_PASS');
+    const zohoUser = this.configService.get<string>('ZOHO_USER');
+    const zohoPass = this.configService.get<string>('ZOHO_PASS');
+    const gmailUser = this.configService.get<string>('GMAIL_USER');
+    const gmailPass = this.configService.get<string>('GMAIL_PASS');
 
     console.log('Using Zoho SMTP for email sending.', zohoUser);
 
@@ -70,7 +70,7 @@ export class MailerService {
     return null;
   }
 
-  async sendMail(mailOptions: nodemailer.SendMailOptions) {
+  async sendMail(mailOptions: nodemailer.SendMailOptions): Promise<void> {
     const transporter = this.getTransporter();
     if (!transporter) {
       console.warn('Transporter not available. Mail not sent:', mailOptions);
@@ -108,7 +108,7 @@ export class MailerService {
         }
 
         // Enhanced mail options to reduce soft bounces
-        const enhancedOptions = {
+        const enhancedOptions: nodemailer.SendMailOptions = {
           ...mailOptions,
           // Add proper headers
           headers: {
@@ -139,9 +139,9 @@ export class MailerService {
           console.log(
             `Email sent successfully: ${info.messageId} (${this.emailsSentInLastMinute}/${this.MAX_EMAILS_PER_MINUTE} this minute)`,
           );
-          return info;
+          return;
         } catch (err) {
-          console.error('Failed to send email:', err?.message || err);
+          console.error('Failed to send email:', this.getErrorMessage(err));
 
           // Check if it's a rate limit error from Gmail
           if (this.isRateLimitError(err)) {
@@ -160,11 +160,11 @@ export class MailerService {
                 'Email sent successfully after rate limit wait:',
                 retryInfo.messageId,
               );
-              return retryInfo;
+              return;
             } catch (retryErr) {
               console.error(
                 'Retry failed after rate limit:',
-                retryErr?.message || retryErr,
+                this.getErrorMessage(retryErr),
               );
               throw retryErr;
             }
@@ -182,9 +182,9 @@ export class MailerService {
                 'Email sent successfully on retry:',
                 retryInfo.messageId,
               );
-              return retryInfo;
+              return;
             } catch (retryErr) {
-              console.error('Retry failed:', retryErr?.message || retryErr);
+              console.error('Retry failed:', this.getErrorMessage(retryErr));
               throw retryErr;
             }
           }
@@ -192,15 +192,14 @@ export class MailerService {
         }
       })
       .catch((err) => {
-        console.error('Email queue error:', err);
+        console.error('Email queue error:', this.getErrorMessage(err));
       });
 
     return this.sendQueue;
   }
 
-  private isRateLimitError(err: any): boolean {
-    if (!err) return false;
-    const message = err.message || err.toString();
+  private isRateLimitError(err: unknown): boolean {
+    const message = this.getErrorMessage(err);
     return (
       message.includes('4.7.28') ||
       message.includes('rate limit') ||
@@ -208,9 +207,8 @@ export class MailerService {
     );
   }
 
-  private isTransientError(err: any): boolean {
-    if (!err) return false;
-    const message = err.message || err.toString();
+  private isTransientError(err: unknown): boolean {
+    const message = this.getErrorMessage(err);
     const transientErrors = [
       'ETIMEDOUT',
       'ECONNRESET',
@@ -224,5 +222,14 @@ export class MailerService {
       '452',
     ];
     return transientErrors.some((error) => message.includes(error));
+  }
+
+  private getErrorMessage(err: unknown): string {
+    if (err instanceof Error) return err.message;
+    try {
+      return String(err);
+    } catch {
+      return 'Unknown error';
+    }
   }
 }

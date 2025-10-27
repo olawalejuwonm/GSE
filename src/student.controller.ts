@@ -2,6 +2,8 @@ import { Controller, Post, Body, Get } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from './mailer.service';
+import { resolveMx } from 'node:dns/promises';
+import type { Student } from './student.schema';
 
 type SkillDocLike = {
   code: string;
@@ -89,12 +91,11 @@ export class StudentController {
 
     // Verify domain has MX records (DNS check)
     try {
-      const dns = require('dns').promises;
-      const mxRecords = await dns.resolveMx(domain);
+      const mxRecords = await resolveMx(domain);
       if (mxRecords && mxRecords.length > 0) {
         return { valid: true };
       }
-    } catch (err) {
+    } catch {
       return {
         valid: false,
         error: 'Invalid email domain. Please check and try again.',
@@ -126,9 +127,11 @@ export class StudentController {
   }
 
   @Post('confirm')
-  async confirmName(@Body() body: any) {
+  async confirmName(
+    @Body() body: { matricNumber: string; name: string; carryOver?: boolean },
+  ) {
     const { matricNumber, name, carryOver } = body;
-    const data: any = { matricNumber, name };
+    const data: Partial<Student> = { matricNumber, name };
     if (carryOver) data.isCarryOver = true;
     await this.studentService.createOrUpdateStudent(data);
     // Do not return student or OTP details for security
@@ -136,7 +139,17 @@ export class StudentController {
   }
 
   @Post('details')
-  async enterDetails(@Body() body: any) {
+  async enterDetails(
+    @Body()
+    body: {
+      matricNumber: string;
+      department: string;
+      faculty: string;
+      phone: string;
+      email: string;
+      isSubscribed?: boolean;
+    },
+  ) {
     const { matricNumber, department, faculty, phone, email, isSubscribed } =
       body;
     // NOTE: isSubscribed is a client-side acknowledgement. This check enforces
@@ -180,7 +193,7 @@ export class StudentController {
       }
       // Send OTP email using shared transporter with a simple HTML template
       const senderName =
-        this.configService.get('GMAIL_SENDER_NAME') ||
+        this.configService.get<string>('GMAIL_SENDER_NAME') ||
         'GSE Student Registration';
       const html = `
         <div style="font-family:Segoe UI, Arial, sans-serif; color:#222;">
@@ -213,7 +226,7 @@ export class StudentController {
   }
 
   @Post('verify-otp')
-  async verifyOtp(@Body() body: any) {
+  async verifyOtp(@Body() body: { email: string; otp: string }) {
     const { email, otp } = body; // always use email as identifier for OTP
     const ok = await this.studentService.verifyOtp(email, otp);
     console.log('OTP verification result:', ok);
@@ -227,7 +240,7 @@ export class StudentController {
   }
 
   @Post('skills')
-  async setSkills(@Body() body: any) {
+  async setSkills(@Body() body: { email: string; skills: string[] }) {
     const { email, skills } = body; // always use email as identifier
     try {
       const result = await this.studentService.setSkills(email, skills);
@@ -275,7 +288,7 @@ export class StudentController {
         // Send confirmation email
         // Send confirmation email using shared transporter. sendMail handles errors internally.
         const senderName =
-          this.configService.get('GMAIL_SENDER_NAME') ||
+          this.configService.get<string>('GMAIL_SENDER_NAME') ||
           'GSE Student Registration';
         await this.mailer.sendMail({
           from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
@@ -295,7 +308,8 @@ export class StudentController {
       );
       return { success: !!student, trainers };
     } catch (err) {
-      return { success: false, error: err.message };
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, error: message };
     }
   }
 }
