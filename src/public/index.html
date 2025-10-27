@@ -211,6 +211,10 @@
       <div class="skills-list" id="skills-list"></div>
       <button type="submit">Submit Skills</button>
     </form>
+    <div id="trainers-display" style="display:none;">
+      <h3 style="color:#2d3a5a; margin-bottom:1rem;">Your Selected Skills & Trainers</h3>
+      <div id="trainers-list" style="display:flex; flex-direction:column; gap:0.8rem;"></div>
+    </div>
     <div class="loading" id="loading">
       <div class="spinner"></div>
       <p style="margin-top:0.5rem; color:#666;">Loading...</p>
@@ -276,6 +280,36 @@
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
       });
+    }
+    function displayTrainers(trainers) {
+      const container = document.getElementById('trainers-display');
+      const list = document.getElementById('trainers-list');
+      list.innerHTML = '';
+      
+      trainers.forEach(trainer => {
+        const card = document.createElement('div');
+        card.style.cssText = `
+          padding: 1rem;
+          border-radius: 8px;
+          background: #fff;
+          border: 1px solid #e0e7ff;
+          box-shadow: 0 2px 8px #0001;
+        `;
+        card.innerHTML = `
+          <div style="font-weight:700; color:#2d3a5a; margin-bottom:0.4rem;">
+            ${trainer.code} - ${trainer.description}
+          </div>
+          <div style="color:#555; font-size:0.95rem;">
+            <strong>Trainer:</strong> ${trainer.trainer}
+          </div>
+          <div style="color:#555; font-size:0.95rem;">
+            <strong>Phone:</strong> ${trainer.phone}
+          </div>
+        `;
+        list.appendChild(card);
+      });
+      
+      container.style.display = 'block';
     }
     // Start screen handlers
     document.getElementById('start-yes').addEventListener('click', () => {
@@ -345,6 +379,14 @@
   const carryOverFlag = isCarryOver;
       const res = await api('/student/matric', { matricNumber });
       if (res.error) {
+        // If registration already completed, show trainer details
+        if (res.registered && res.trainers && res.trainers.length > 0) {
+          clearNotifications();
+          e.target.style.display = 'none';
+          displayTrainers(res.trainers);
+          showSuccess('Registration already completed! Here are your trainer details:');
+          return;
+        }
         // If not found but user marked carry-over, allow manual entry
         if (carryOverFlag && res.error && res.error.includes('not found')) {
           clearNotifications();
