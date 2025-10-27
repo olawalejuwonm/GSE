@@ -113,33 +113,33 @@ export class StudentController {
     // Only fetch, do not create student
     const student = await this.studentService.findByMatricNumber(matricNumber);
     console.log('Student found:', student);
-    
+
     // Student not found in database
     if (!student) {
       return { error: 'Student not found. Please check your matric number.' };
     }
-    
+
     // Student found but has already completed registration
     if (student.skills && student.skills.length > 0) {
       // Fetch trainer details for the selected skills
       const skillDocs = await this.studentService['skillModel']
         .find({ code: { $in: student.skills } })
         .lean<SkillDocLike[]>();
-      
+
       const trainers = skillDocs.map((skill) => ({
         code: skill.code,
         description: skill.description,
         trainer: skill.trainer || 'N/A',
         phone: skill.phone || 'N/A',
       }));
-      
+
       return {
         error: 'Registration already completed.',
         registered: true,
         trainers,
       };
     }
-    
+
     // Student found and has not completed registration
     return {
       name: student.name,
@@ -243,7 +243,6 @@ export class StudentController {
       //   text: `Your OTP code is: ${otp}`,
       //   html,
       // });
-      
     } else if (email && student.isEmailVerified) {
       return { error: 'Email already verified. No OTP sent.' };
     }
@@ -315,13 +314,13 @@ export class StudentController {
         const senderName =
           this.configService.get<string>('GMAIL_SENDER_NAME') ||
           'GSE Student Registration';
-        await this.mailer.sendMail({
-          from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
-          to: email,
-          subject: 'Skill Selection Confirmation & Trainer Details',
-          text: message,
-          html,
-        });
+        // await this.mailer.sendMail({
+        //   from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
+        //   to: email,
+        //   subject: 'Skill Selection Confirmation & Trainer Details',
+        //   text: message,
+        //   html,
+        // });
       }
       const trainers = ((skillDocs ?? []) as SkillDocLike[]).map(
         (s: SkillDocLike) => ({
