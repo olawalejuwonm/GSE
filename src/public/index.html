@@ -448,7 +448,7 @@
         });
         document.getElementById('skills-form').style.display = '';
       } else {
-        showError(res.error || 'Invalid or expired OTP');
+        showError(res.error || 'Invalid OTP');
       }
     };
     document.getElementById('skills-form').onsubmit = async e => {

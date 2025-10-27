@@ -132,8 +132,14 @@ export class StudentController {
     });
     // Only send OTP if email is provided and not already verified
     if (email && !student.isEmailVerified) {
-      const otp = this.studentService.generateOtp();
-      await this.studentService.setOtp(email, otp);
+      // Reuse existing OTP if present; otherwise generate and set it once
+      let otp: string;
+      if (student.otp && String(student.otp).trim().length === 6) {
+        otp = String(student.otp).trim();
+      } else {
+        otp = this.studentService.generateOtp();
+        await this.studentService.setOtp(email, otp);
+      }
       // Send OTP email using shared transporter with a simple HTML template
       const senderName =
         this.configService.get('GMAIL_SENDER_NAME') ||
@@ -145,11 +151,12 @@ export class StudentController {
           </div>
           <div style="padding:18px; background:#fff; border:1px solid #eee; border-top:0; border-radius:0 0 8px 8px;">
             <p style="font-size:15px; margin:0 0 8px 0;">Hello,</p>
-            <p style="margin:0 0 12px 0; color:#333;">Use the code below to complete your registration. The code expires in 10 minutes.</p>
+            <p style="margin:0 0 12px 0; color:#333;">Use the code below to complete your registration.</p>
             <div style="display:flex; align-items:center; justify-content:center;">
               <div style="font-weight:700; font-size:24px; letter-spacing:2px; background:#f6f7ff; padding:10px 18px; border-radius:6px; border:1px solid #e6e9ff;">${otp}</div>
             </div>
-            <p style="margin-top:14px; color:#666; font-size:13px;">If you didn't request this, ignore this email.</p>
+            <p style="margin-top:14px; color:#666; font-size:13px;">This code does not expire. You can always re-use this same code to verify your email if needed.</p>
+            <p style="margin:6px 0 0 0; color:#888; font-size:12px;">If you didn't request this, you can safely ignore this email.</p>
             <hr style="border:none; border-top:1px solid #eee; margin:14px 0;" />
           </div>
         </div>

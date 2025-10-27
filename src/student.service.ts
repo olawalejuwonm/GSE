@@ -31,27 +31,32 @@ export class StudentService {
 
   async setOtp(identifier: string, otp: string) {
     // Always use email for OTP
-    return this.studentModel.findOneAndUpdate(
-      { email: identifier },
-      { $set: { otp, otpExpires: new Date(Date.now() + 10 * 60 * 1000) } },
-      { new: true },
-    );
+    // Do not regenerate if already set; remove expiry if present
+    const student = await this.studentModel.findOne({ email: identifier });
+    if (!student) return null as any;
+    if (student.otp && String(student.otp).trim().length > 0) {
+      // Ensure no expiry is enforced going forward
+      if (student.otpExpires) {
+        (student as any).otpExpires = undefined;
+        await student.save();
+      }
+      return student;
+    }
+    student.otp = otp;
+    (student as any).otpExpires = undefined;
+    await student.save();
+    return student;
   }
 
   async verifyOtp(identifier: string, otp: string) {
     // Always use email for OTP
     const student = await this.studentModel.findOne({ email: identifier });
-    if (
-      !student ||
-      student.otp !== otp ||
-      !student.otpExpires ||
-      student.otpExpires < new Date()
-    ) {
+    if (!student || student.otp !== otp) {
       return false;
     }
     student.isEmailVerified = true;
-    student.otp = '';
-    student.otpExpires = undefined as any;
+    // Do not clear OTP; keep it reusable. Also ensure no expiry is set.
+    (student as any).otpExpires = undefined;
     await student.save();
     return true;
   }
