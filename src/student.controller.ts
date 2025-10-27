@@ -3,6 +3,13 @@ import { StudentService } from './student.service';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from './mailer.service';
 
+type SkillDocLike = {
+  code: string;
+  description: string;
+  trainer?: string | null;
+  phone?: string | null;
+};
+
 @Controller('student')
 export class StudentController {
   constructor(
@@ -195,10 +202,21 @@ export class StudentController {
       const result = await this.studentService.setSkills(email, skills);
       const student = result && result.student;
       const skillDocs = result && result.skillDocs;
+      if (result && result.alreadyRegistered) {
+        // Student had already registered; return trainers without changing selection
+        const typedSkills = ((skillDocs ?? []) as SkillDocLike[]);
+        const trainers = typedSkills.map((s: SkillDocLike) => ({
+          code: s.code,
+          description: s.description,
+          trainer: s.trainer ?? null,
+          phone: s.phone ?? null,
+        }));
+        return { success: true, alreadyRegistered: true, trainers };
+      }
       if (student && skillDocs && skillDocs.length > 0) {
         // Build a confirmation message listing trainers for chosen skills
-        const lines = skillDocs.map(
-          (s) =>
+        const lines = (skillDocs as SkillDocLike[]).map(
+          (s: SkillDocLike) =>
             `Skill: ${s.description} \n - Trainer: ${s.trainer || 'N/A'}\n - Phone: ${s.phone || 'N/A'}`,
         );
         const message = `Your skill selection is confirmed. Please contact your trainer(s):\n\n${lines.join('\n')}`;
@@ -211,9 +229,9 @@ export class StudentController {
               <p style="margin:0 0 8px 0;">Hello,</p>
               <p style="margin:0 0 10px 0; color:#333;">Your skill selection has been recorded. Below are your trainer details:</p>
               <ul style="padding-left:18px; color:#333;">
-                ${skillDocs
+                ${(skillDocs as SkillDocLike[])
                   .map(
-                    (s) =>
+                    (s: SkillDocLike) =>
                       `<li style="margin-bottom:8px;"><strong>${s.description}</strong><br/>Trainer: ${s.trainer || 'N/A'}<br/>Phone: ${s.phone || 'N/A'}</li>`,
                   )
                   .join('')}
@@ -236,11 +254,11 @@ export class StudentController {
           html,
         });
       }
-      const trainers = (skillDocs || []).map((s) => ({
+      const trainers = ((skillDocs ?? []) as SkillDocLike[]).map((s: SkillDocLike) => ({
         code: s.code,
         description: s.description,
-        trainer: s.trainer || null,
-        phone: s.phone || null,
+        trainer: s.trainer ?? null,
+        phone: s.phone ?? null,
       }));
       return { success: !!student, trainers };
     } catch (err) {

@@ -67,7 +67,11 @@ export class StudentService {
     const student = await this.studentModel.findOne({ email: identifier });
     if (!student) throw new Error('Student not found.');
     if (student.skills && student.skills.length > 0) {
-      throw new Error('You have already selected your skills.');
+      // Return the trainers for the previously selected skills
+      const skillDocs = await this.skillModel
+        .find({ code: { $in: student.skills } })
+        .lean();
+      return { student, skillDocs, alreadyRegistered: true };
     }
     // Check and increment selectedCount for each selected skill using conditional update
     const skillDocs = await this.skillModel.find({ code: { $in: skills } });
