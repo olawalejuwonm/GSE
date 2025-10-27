@@ -132,7 +132,10 @@ export class StudentService {
   }
 
   async getAllSkills(): Promise<Skill[]> {
-    return this.skillModel.find().sort({ description: 1 }).lean();
+    return this.skillModel
+      .find({ hidden: { $ne: true } })
+      .sort({ description: 1 })
+      .lean();
   }
 
   generateOtp() {

@@ -20,6 +20,9 @@ export class Skill extends Document {
 
   @Prop({ default: 0 })
   selectedCount?: number;
+
+  @Prop({ default: false })
+  hidden?: boolean;
 }
 
 export const SkillSchema = SchemaFactory.createForClass(Skill);
