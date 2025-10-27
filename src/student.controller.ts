@@ -113,17 +113,41 @@ export class StudentController {
     // Only fetch, do not create student
     const student = await this.studentService.findByMatricNumber(matricNumber);
     console.log('Student found:', student);
-    if (student && (!student.skills || student.skills.length === 0)) {
+    
+    // Student not found in database
+    if (!student) {
+      return { error: 'Student not found. Please check your matric number.' };
+    }
+    
+    // Student found but has already completed registration
+    if (student.skills && student.skills.length > 0) {
+      // Fetch trainer details for the selected skills
+      const skillDocs = await this.studentService['skillModel']
+        .find({ code: { $in: student.skills } })
+        .lean<SkillDocLike[]>();
+      
+      const trainers = skillDocs.map((skill) => ({
+        code: skill.code,
+        description: skill.description,
+        trainer: skill.trainer || 'N/A',
+        phone: skill.phone || 'N/A',
+      }));
+      
       return {
-        name: student.name,
-        department: student.department,
-        faculty: student.faculty,
-        phone: student.phone,
-        email: student.email,
+        error: 'Registration already completed.',
+        registered: true,
+        trainers,
       };
     }
-    // If not found, return error
-    return { error: 'Student not found or registration already completed.' };
+    
+    // Student found and has not completed registration
+    return {
+      name: student.name,
+      department: student.department,
+      faculty: student.faculty,
+      phone: student.phone,
+      email: student.email,
+    };
   }
 
   @Post('confirm')
