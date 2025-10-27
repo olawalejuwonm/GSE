@@ -243,6 +243,11 @@
     let isSubscribed = localStorage.getItem(SUB_KEY) === 'true';
     function showLoading(show) {
       document.getElementById('loading').style.display = show ? 'block' : 'none';
+      // Disable all buttons when loading
+      const buttons = document.querySelectorAll('button[type="submit"]');
+      buttons.forEach(btn => {
+        btn.disabled = show;
+      });
     }
     function clearNotifications() {
       document.getElementById('success-msg').style.display = 'none';
