@@ -11,6 +11,67 @@ export class StudentController {
     private readonly mailer: MailerService,
   ) {}
 
+  private async validateEmail(email: string): Promise<{ valid: boolean; error?: string }> {
+    // Basic format validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return { valid: false, error: 'Please enter a valid email address.' };
+    }
+
+    // Extract domain
+    const domain = email.split('@')[1].toLowerCase();
+    
+    // Known valid email providers and educational domains
+    const validDomains = [
+      'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com',
+      'icloud.com', 'aol.com', 'protonmail.com', 'zoho.com', 'yandex.com',
+      'mail.com', 'gmx.com', 'tutanota.com', 'fastmail.com',
+      // Educational domains
+      'unilorin.edu.ng', 'student.unilorin.edu.ng', 'pg.unilorin.edu.ng'
+    ];
+
+    // Check if domain is in known valid list
+    if (validDomains.includes(domain)) {
+      return { valid: true };
+    }
+
+    // Check for common typos of popular providers
+    const commonTypos = [
+      { typo: 'gmak.com', correct: 'gmail.com' },
+      { typo: 'gmai.com', correct: 'gmail.com' },
+      { typo: 'gmial.com', correct: 'gmail.com' },
+      { typo: 'yahooo.com', correct: 'yahoo.com' },
+      { typo: 'yaho.com', correct: 'yahoo.com' },
+      { typo: 'outlok.com', correct: 'outlook.com' },
+      { typo: 'outloo.com', correct: 'outlook.com' },
+      { typo: 'hotmial.com', correct: 'hotmail.com' },
+      { typo: 'hotmal.com', correct: 'hotmail.com' },
+    ];
+
+    const typo = commonTypos.find(t => t.typo === domain);
+    if (typo) {
+      return { valid: false, error: `Did you mean ${email.replace(domain, typo.correct)}?` };
+    }
+
+    // Check for valid educational domain pattern
+    if (domain.endsWith('.edu') || domain.endsWith('.edu.ng') || domain.endsWith('.ac.ng')) {
+      return { valid: true };
+    }
+
+    // Verify domain has MX records (DNS check)
+    try {
+      const dns = require('dns').promises;
+      const mxRecords = await dns.resolveMx(domain);
+      if (mxRecords && mxRecords.length > 0) {
+        return { valid: true };
+      }
+    } catch (err) {
+      return { valid: false, error: 'Invalid email domain. Please check and try again.' };
+    }
+
+    return { valid: false, error: 'Email domain not recognized. Please use a valid email provider.' };
+  }
+
   @Post('matric')
   async enterMatric(@Body('matricNumber') matricNumber: string) {
     // Only fetch, do not create student
@@ -48,11 +109,11 @@ export class StudentController {
     if (!isSubscribed) {
       return { error: 'You must subscribe to the YouTube channel before registering.' };
     }
-    // Validate email format
+    // Validate email format and domain
     if (email) {
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailRegex.test(email)) {
-        return { error: 'Please enter a valid email address.' };
+      const validation = await this.validateEmail(email);
+      if (!validation.valid) {
+        return { error: validation.error };
       }
     }
     // Check for duplicate email (if provided)
