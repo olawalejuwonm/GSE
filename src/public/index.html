@@ -99,6 +99,28 @@
       width: 1.1em;
       height: 1.1em;
     }
+    .skills-list label.disabled {
+      background: #f5f5f5;
+      color: #999;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .skills-list label.disabled:hover {
+      background: #f5f5f5;
+      box-shadow: 0 1px 4px #0001;
+    }
+    .skills-list label.disabled input[type="radio"] {
+      cursor: not-allowed;
+    }
+    .skill-full-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: #e74c3c;
+      font-weight: 600;
+      background: #ffe5e5;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
     .success {
       color: #2ecc40;
       text-align: center;
@@ -502,9 +524,21 @@
         const skillsList = document.getElementById('skills-list');
         skillsList.innerHTML = '';
         skills.forEach(skill => {
+          // Check if skill is full
+          const isFull = (skill.selectedCount || 0) >= (skill.maxSelection || 160);
+          
           // Display skill description, single-select with radios
           const label = document.createElement('label');
-          label.innerHTML = `<input type="radio" name="skill" value="${skill.code}"> ${skill.description}`;
+          if (isFull) {
+            label.className = 'disabled';
+            label.innerHTML = `
+              <input type="radio" name="skill" value="${skill.code}" disabled>
+              ${skill.description}
+              <span class="skill-full-badge">FULL</span>
+            `;
+          } else {
+            label.innerHTML = `<input type="radio" name="skill" value="${skill.code}"> ${skill.description}`;
+          }
           skillsList.appendChild(label);
         });
         document.getElementById('skills-form').style.display = '';
