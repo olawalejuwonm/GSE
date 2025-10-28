@@ -344,6 +344,13 @@
       matricNumber = document.getElementById('matricNumber').value;
   const carryOverFlag = isCarryOver;
       const res = await api('/student/matric', { matricNumber });
+      if (res.registered && Array.isArray(res.trainers)) {
+        clearNotifications();
+        hideAllForms();
+        const lines = res.trainers.map(t => `${t.description} — Trainer: ${t.trainer || 'N/A'} (${t.phone || 'N/A'})`);
+        showSuccess(`You have already completed registration.\n\nYour trainer details:\n\n${lines.join('\n')}`);
+        return;
+      }
       if (res.error) {
         // If not found but user marked carry-over, allow manual entry
         if (carryOverFlag && res.error && res.error.includes('not found')) {
