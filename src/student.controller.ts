@@ -246,15 +246,16 @@ export class StudentController {
     } else if (email && student.isEmailVerified) {
       return { error: 'Email already verified. No OTP sent.' };
     }
-    return { success: true };
+    return { error: 'Email already verified. No OTP sent.' };
+    // return { success: true };
   }
 
   @Post('verify-otp')
   async verifyOtp(@Body() body: { email: string; otp: string }) {
     const { email, otp } = body; // always use email as identifier for OTP
-    // const ok = await this.studentService.verifyOtp(email, otp);
-    // console.log('OTP verification result:', ok);
-    return { verified: true };
+    const ok = await this.studentService.verifyOtp(email, otp);
+    console.log('OTP verification result:', ok);
+    return { verified: ok };
   }
 
   @Get('skills')
