@@ -134,7 +134,6 @@ export class StudentController {
       }));
 
       return {
-        error: 'Registration already completed.',
         registered: true,
         trainers,
       };
