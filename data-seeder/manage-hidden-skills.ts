@@ -301,7 +301,7 @@ async function sendBulkEmailToStudents(
             Your previous skill selection has been removed, and you will need to register for a new skill to complete your enrollment.
           </p>
           <div style="text-align:center; margin:20px 0;">
-            <a href="${process.env.REGISTRATION_URL || 'https://your-registration-url.com'}" 
+            <a href="${process.env.REGISTRATION_URL || 'https://gse.unilorin.edu.ng/'}" 
                style="display:inline-block; background:linear-gradient(90deg,#7b61ff,#4f8cff); color:#fff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:600;">
               Register for New Skill
             </a>
@@ -327,7 +327,7 @@ Action Required: Please log in to the registration portal to select a new skill 
 
 Your previous skill selection has been removed, and you will need to register for a new skill to complete your enrollment.
 
-Registration URL: ${process.env.REGISTRATION_URL || 'https://your-registration-url.com'}
+Registration URL: ${process.env.REGISTRATION_URL || 'https://gse.unilorin.edu.ng/'}
 
 If you have any questions, please contact the GSE office.
 
@@ -495,12 +495,12 @@ async function main() {
         if (countStudents.length > 0) {
           console.log('\n  Students:');
           countStudents.forEach((s, i) => {
-            console.log(
-              `    ${i + 1}. ${s.name} (${s.matricNumber}) - ${s.email}`,
-            );
-            console.log(
-              `       Hidden skills: ${s.hiddenSkills.map((sk) => sk.description).join(', ')}`,
-            );
+            // console.log(
+            //   `    ${i + 1}. ${s.name} (${s.matricNumber}) - ${s.email}`,
+            // );
+            // console.log(
+            //   `       Hidden skills: ${s.hiddenSkills.map((sk) => sk.description).join(', ')}`,
+            // );
           });
         }
         break;
