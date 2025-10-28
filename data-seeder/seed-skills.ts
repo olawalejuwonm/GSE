@@ -65,7 +65,7 @@ async function seedSkills() {
               description,
               trainer,
               phone,
-              maxSelection: 120,
+              maxSelection: 160,
               hidden: isHidden,
             },
           },

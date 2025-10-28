@@ -97,7 +97,7 @@ export class StudentService {
               `Skill '${skill.code}' not found when attempting to increment.`,
             );
           }
-          if ((fresh.selectedCount ?? 0) >= (fresh.maxSelection ?? 120)) {
+          if ((fresh.selectedCount ?? 0) >= (fresh.maxSelection ?? 160)) {
             throw new Error(
               `Skill '${skill.description}' has reached the maximum number of selections.`,
             );

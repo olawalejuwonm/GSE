@@ -88,7 +88,7 @@ async function upsertNewSkills() {
             description: s.description,
             trainer: s.trainer,
             phone: s.phone,
-            maxSelection: 120,
+            maxSelection: 160,
             hidden: false,
           },
         },
