@@ -14,7 +14,7 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 - **Build**: Webpack via NestJS CLI
 
 ## Quick start
-- Env: create `.env` with MONGODB_URI, GMAIL_USER, GMAIL_PASS, optional PORT, GMAIL_SENDER_NAME (optional).
+- Env: create `.env` with MONGODB_URI, GMAIL_USER, GMAIL_PASS. Optional: PORT. See Environment variables section for all options.
 - Dev: `npm run start:dev` (task "Start NestJS App" exists) – serves static UI from `src/public/index.html` and API under `/student`.
 - Build: `npm run build` (webpack build to dist/)
 - Tests: `npm run test`, e2e `npm run test:e2e`
@@ -83,7 +83,7 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 - App setup: `src/app.module.ts`, `src/main.ts`
 - Email service: `src/mailer.service.ts`
 - UI: `src/public/index.html` (single-page static HTML with inline CSS/JS)
-- Seeders: `data-seeder/seed-*.ts` (seed-students, seed-skills, clear-skills, clear-students, manage-hidden-skills, update-skill-limits, add-new-skills)
+- Seeders: `data-seeder/seed-*.ts` (see Data seeder utilities section for details)
 - Config: `.env` (not in repo), `package.json`, `tsconfig.json`, `eslint.config.mjs`, `.prettierrc`
 
 ## Data seeder utilities
