@@ -1,9 +1,11 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import { Controller, Post, Body, Get, Res } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from './mailer.service';
 import { resolveMx } from 'node:dns/promises';
 import type { Student } from './student.schema';
+import { Response } from 'express';
+import * as XLSX from 'xlsx';
 
 type SkillDocLike = {
   code: string;
@@ -108,8 +110,29 @@ export class StudentController {
     };
   }
 
+  @Get('registration-status')
+  getRegistrationStatus() {
+    // Check if registration is open or closed
+    // Using environment variable or configuration
+    const isOpen =
+      this.configService.get<string>('REGISTRATION_OPEN') !== 'false';
+    const message = isOpen
+      ? 'Registration is open'
+      : 'Registration is currently closed. Thank you for your interest.';
+    return { isOpen, message };
+  }
+
   @Post('matric')
   async enterMatric(@Body('matricNumber') matricNumber: string) {
+    // Check if registration is open
+    const isOpen =
+      this.configService.get<string>('REGISTRATION_OPEN') !== 'false';
+    if (!isOpen) {
+      return {
+        error: 'Registration is currently closed. Thank you for your interest.',
+        registrationClosed: true,
+      };
+    }
     // Only fetch, do not create student
     const student = await this.studentService.findByMatricNumber(matricNumber);
     console.log('Student found:', student);
@@ -284,37 +307,14 @@ export class StudentController {
       }
       if (student && skillDocs && skillDocs.length > 0) {
         // Build a confirmation message listing trainers for chosen skills
-        const lines = (skillDocs as SkillDocLike[]).map(
-          (s: SkillDocLike) =>
-            `Skill: ${s.description} \n - Trainer: ${s.trainer || 'N/A'}\n - Phone: ${s.phone || 'N/A'}`,
-        );
-        const message = `Your skill selection is confirmed. Please contact your trainer(s):\n\n${lines.join('\n')}`;
-        const html = `
-          <div style="font-family:Segoe UI, Arial, sans-serif; color:#222;">
-            <div style="background:linear-gradient(90deg,#7b61ff,#4f8cff); padding:16px; border-radius:8px; color:#fff; text-align:center;">
-              <h2 style="margin:0; font-size:18px;">Skill Selection Confirmed</h2>
-            </div>
-            <div style="padding:14px; background:#fff; border:1px solid #eee; border-top:0; border-radius:0 0 8px 8px;">
-              <p style="margin:0 0 8px 0;">Hello,</p>
-              <p style="margin:0 0 10px 0; color:#333;">Your skill selection has been recorded. Below are your trainer details:</p>
-              <ul style="padding-left:18px; color:#333;">
-                ${(skillDocs as SkillDocLike[])
-                  .map(
-                    (s: SkillDocLike) =>
-                      `<li style="margin-bottom:8px;"><strong>${s.description}</strong><br/>Trainer: ${s.trainer || 'N/A'}<br/>Phone: ${s.phone || 'N/A'}</li>`,
-                  )
-                  .join('')}
-              </ul>
-              <p style="font-size:13px; color:#666;">Please contact your trainer to proceed.</p>
-              <hr style="border:none; border-top:1px solid #eee; margin:12px 0;" />
-            </div>
-          </div>
-        `;
-        // Send confirmation email
-        // Send confirmation email using shared transporter. sendMail handles errors internally.
-        const senderName =
-          this.configService.get<string>('GMAIL_SENDER_NAME') ||
-          'GSE Student Registration';
+        // Email sending is currently disabled
+        // const lines = (skillDocs as SkillDocLike[]).map(
+        //   (s: SkillDocLike) =>
+        //     `Skill: ${s.description} \n - Trainer: ${s.trainer || 'N/A'}\n - Phone: ${s.phone || 'N/A'}`,
+        // );
+        // const message = `Your skill selection is confirmed. Please contact your trainer(s):\n\n${lines.join('\n')}`;
+        // const html = `...`;
+        // const senderName = this.configService.get<string>('GMAIL_SENDER_NAME') || 'GSE Student Registration';
         // await this.mailer.sendMail({
         //   from: `${senderName} <${this.configService.get('EMAIL_SENDER')}>`,
         //   to: email,
@@ -335,6 +335,82 @@ export class StudentController {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { success: false, error: message };
+    }
+  }
+
+  @Get('export/excel')
+  async exportStudentsToExcel(@Res() res: Response) {
+    try {
+      const studentsBySkill = await this.studentService.getStudentsBySkill();
+
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new();
+
+      // Add a sheet for each skill
+      studentsBySkill.forEach((skillData) => {
+        if (skillData.students.length > 0) {
+          // Prepare data for the sheet
+          const sheetData = skillData.students.map((student, index) => ({
+            'S/N': index + 1,
+            'Matric Number': student.matricNumber,
+            Name: student.name,
+            Department: student.department || 'N/A',
+            Faculty: student.faculty || 'N/A',
+            Phone: student.phone || 'N/A',
+            Email: student.email || 'N/A',
+          }));
+
+          // Add skill info at the top
+          const headerData = [
+            { 'S/N': 'Skill:', 'Matric Number': skillData.description },
+            { 'S/N': 'Trainer:', 'Matric Number': skillData.trainer || 'N/A' },
+            { 'S/N': 'Phone:', 'Matric Number': skillData.phone || 'N/A' },
+            { 'S/N': '', 'Matric Number': '' }, // Empty row
+          ];
+
+          const fullData = [...headerData, ...sheetData];
+          const worksheet = XLSX.utils.json_to_sheet(fullData);
+
+          // Sanitize sheet name (Excel sheet names have restrictions)
+          let sheetName = skillData.description.substring(0, 31);
+          sheetName = sheetName.replace(/[:\\/?*[\]]/g, '-');
+
+          // Add worksheet to workbook
+          XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        }
+      });
+
+      // If no students registered yet, add an empty sheet
+      if (workbook.SheetNames.length === 0) {
+        const emptySheet = XLSX.utils.json_to_sheet([
+          { Message: 'No students have registered yet.' },
+        ]);
+        XLSX.utils.book_append_sheet(workbook, emptySheet, 'No Data');
+      }
+
+      // Generate Excel file buffer
+      const excelBuffer = XLSX.write(workbook, {
+        type: 'buffer',
+        bookType: 'xlsx',
+      });
+
+      // Set response headers
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename=GSE-Students-${new Date().toISOString().split('T')[0]}.xlsx`,
+      );
+
+      // Send the Excel file
+      res.send(excelBuffer);
+    } catch (error) {
+      console.error('Error exporting students to Excel:', error);
+      res.status(500).json({
+        error: 'Failed to export students. Please try again later.',
+      });
     }
   }
 }

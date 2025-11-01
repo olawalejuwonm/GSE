@@ -143,6 +143,23 @@
 <body>
   <div class="container">
     <h2>Student Registration</h2>
+    
+    <!-- Registration Closed Message (hidden by default) -->
+    <div id="registration-closed" style="display:none; text-align:center; padding:2rem 1rem;">
+      <div style="background:#fff3cd; border:2px solid #ffc107; border-radius:12px; padding:2rem; margin-bottom:1rem;">
+        <h3 style="color:#856404; margin:0 0 1rem 0; font-size:1.4rem;">⚠️ Registration Closed</h3>
+        <p style="color:#856404; font-size:1.1rem; margin:0 0 1rem 0;">
+          Registration is currently closed. Thank you for your interest.
+        </p>
+        <p style="color:#666; font-size:0.95rem; margin:0;">
+          Please check back later or contact the administration for more information.
+        </p>
+      </div>
+      <a href="/download.html" style="display:inline-block; margin-top:1rem; padding:0.8rem 1.5rem; background:#7b61ff; color:#fff; text-decoration:none; border-radius:6px; font-weight:600;">
+        Download Student List (Admin)
+      </a>
+    </div>
+    
     <!-- YouTube subscription gate -->
     <div id="youtube-gate" style="text-align:center; margin-bottom:1rem;">
       <p style="font-weight:700; color:#2d3a5a;">Please subscribe to our YouTube channel to continue</p>
@@ -337,8 +354,33 @@
       revealStartIfSubscribed();
     });
 
-    // Initialize gate visibility on load
-    revealStartIfSubscribed();
+    // Check registration status on page load
+    async function checkRegistrationStatus() {
+      try {
+        const response = await fetch('/student/registration-status');
+        const data = await response.json();
+        
+        if (!data.isOpen) {
+          // Hide all forms and show closure message
+          document.getElementById('youtube-gate').style.display = 'none';
+          document.getElementById('start-screen').style.display = 'none';
+          document.getElementById('registration-closed').style.display = 'block';
+          hideAllForms();
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error('Failed to check registration status:', error);
+        return true; // Default to open if check fails
+      }
+    }
+
+    // Initialize gate visibility and check registration status on load
+    checkRegistrationStatus().then(isOpen => {
+      if (isOpen) {
+        revealStartIfSubscribed();
+      }
+    });
     document.getElementById('matric-form').onsubmit = async e => {
       e.preventDefault();
       matricNumber = document.getElementById('matricNumber').value;

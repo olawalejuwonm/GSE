@@ -141,4 +141,49 @@ export class StudentService {
   generateOtp() {
     return crypto.randomInt(100000, 999999).toString();
   }
+
+  async getAllRegisteredStudents() {
+    // Get all students who have completed registration (have skills)
+    return this.studentModel
+      .find({ skills: { $exists: true, $ne: [] } })
+      .select('matricNumber name department faculty phone email skills')
+      .lean();
+  }
+
+  async getStudentsBySkill() {
+    // Get all registered students grouped by skills
+    const students = await this.getAllRegisteredStudents();
+    const skills = await this.skillModel.find().lean();
+
+    const skillMap = new Map();
+    skills.forEach((skill) => {
+      skillMap.set(skill.code, {
+        code: skill.code,
+        description: skill.description,
+        trainer: skill.trainer,
+        phone: skill.phone,
+        students: [],
+      });
+    });
+
+    students.forEach((student) => {
+      if (student.skills && student.skills.length > 0) {
+        student.skills.forEach((skillCode) => {
+          const skillData = skillMap.get(skillCode);
+          if (skillData) {
+            skillData.students.push({
+              matricNumber: student.matricNumber,
+              name: student.name,
+              department: student.department,
+              faculty: student.faculty,
+              phone: student.phone,
+              email: student.email,
+            });
+          }
+        });
+      }
+    });
+
+    return Array.from(skillMap.values());
+  }
 }
