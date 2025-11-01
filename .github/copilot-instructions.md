@@ -40,7 +40,7 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 
 ## Email/OTP
 - Email is the single source of truth for OTP and skill assignment. Use email to look up/update OTP and skills; do not use matric for these steps.
-- OTP is 6 digits (`crypto.randomInt`), does not expire (reusable); stored in Student. Verification sets `isEmailVerified = true` but keeps OTP for potential reuse.
+- OTP is 6 digits (`crypto.randomInt`), does not expire (reusable); stored in Student. The `otpExpires` field exists in schema but is always set to `undefined` (not used). Verification sets `isEmailVerified = true` but keeps OTP for potential reuse.
 - SMTP via `nodemailer` with Gmail: `GMAIL_USER`/`GMAIL_PASS` (App Password recommended).
 
 ## Seeding and data sources
@@ -58,7 +58,6 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 - Static UI is a single HTML file – no framework build. Keep API contract stable or edit `src/public/index.html` accordingly.
 - Carry-over students: Set `isCarryOver: true` via POST `/student/confirm` with `carryOver` field.
 - Email validation: Controller validates email format, checks MX records, and suggests corrections for common typos (gmail/yahoo/outlook).
-- OTP never expires (otpExpires always undefined after generation) – students can reuse the same OTP indefinitely for convenience.
 
 ## Code style and patterns
 - TypeScript with strict mode enabled
