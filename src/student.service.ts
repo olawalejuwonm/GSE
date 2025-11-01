@@ -151,39 +151,44 @@ export class StudentService {
   }
 
   async getStudentsBySkill() {
-    // Get all registered students grouped by skills
-    const students = await this.getAllRegisteredStudents();
-    const skills = await this.skillModel.find().lean();
+    try {
+      // Get all registered students grouped by skills
+      const students = await this.getAllRegisteredStudents();
+      const skills = await this.skillModel.find().lean();
 
-    const skillMap = new Map();
-    skills.forEach((skill) => {
-      skillMap.set(skill.code, {
-        code: skill.code,
-        description: skill.description,
-        trainer: skill.trainer,
-        phone: skill.phone,
-        students: [],
-      });
-    });
-
-    students.forEach((student) => {
-      if (student.skills && student.skills.length > 0) {
-        student.skills.forEach((skillCode) => {
-          const skillData = skillMap.get(skillCode);
-          if (skillData) {
-            skillData.students.push({
-              matricNumber: student.matricNumber,
-              name: student.name,
-              department: student.department,
-              faculty: student.faculty,
-              phone: student.phone,
-              email: student.email,
-            });
-          }
+      const skillMap = new Map();
+      skills.forEach((skill) => {
+        skillMap.set(skill.code, {
+          code: skill.code,
+          description: skill.description,
+          trainer: skill.trainer,
+          phone: skill.phone,
+          students: [],
         });
-      }
-    });
+      });
 
-    return Array.from(skillMap.values());
+      students.forEach((student) => {
+        if (student.skills && student.skills.length > 0) {
+          student.skills.forEach((skillCode) => {
+            const skillData = skillMap.get(skillCode);
+            if (skillData) {
+              skillData.students.push({
+                matricNumber: student.matricNumber,
+                name: student.name,
+                department: student.department,
+                faculty: student.faculty,
+                phone: student.phone,
+                email: student.email,
+              });
+            }
+          });
+        }
+      });
+
+      return Array.from(skillMap.values());
+    } catch (error) {
+      console.error('Error fetching students by skill:', error);
+      throw new Error('Failed to fetch students grouped by skills');
+    }
   }
 }

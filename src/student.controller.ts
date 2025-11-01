@@ -349,27 +349,37 @@ export class StudentController {
       // Add a sheet for each skill
       studentsBySkill.forEach((skillData) => {
         if (skillData.students.length > 0) {
-          // Prepare data for the sheet
-          const sheetData = skillData.students.map((student, index) => ({
-            'S/N': index + 1,
-            'Matric Number': student.matricNumber,
-            Name: student.name,
-            Department: student.department || 'N/A',
-            Faculty: student.faculty || 'N/A',
-            Phone: student.phone || 'N/A',
-            Email: student.email || 'N/A',
-          }));
-
-          // Add skill info at the top
-          const headerData = [
-            { 'S/N': 'Skill:', 'Matric Number': skillData.description },
-            { 'S/N': 'Trainer:', 'Matric Number': skillData.trainer || 'N/A' },
-            { 'S/N': 'Phone:', 'Matric Number': skillData.phone || 'N/A' },
-            { 'S/N': '', 'Matric Number': '' }, // Empty row
+          // Prepare skill info header section
+          const skillInfo = [
+            ['Skill:', skillData.description],
+            ['Trainer:', skillData.trainer || 'N/A'],
+            ['Phone:', skillData.phone || 'N/A'],
+            [''], // Empty row for separation
           ];
 
-          const fullData = [...headerData, ...sheetData];
-          const worksheet = XLSX.utils.json_to_sheet(fullData);
+          // Prepare student data with proper column headers
+          const studentHeaders = [
+            'S/N',
+            'Matric Number',
+            'Name',
+            'Department',
+            'Faculty',
+            'Phone',
+            'Email',
+          ];
+          const studentRows = skillData.students.map((student, index) => [
+            index + 1,
+            student.matricNumber,
+            student.name,
+            student.department || 'N/A',
+            student.faculty || 'N/A',
+            student.phone || 'N/A',
+            student.email || 'N/A',
+          ]);
+
+          // Combine skill info and student data
+          const allData = [...skillInfo, studentHeaders, ...studentRows];
+          const worksheet = XLSX.utils.aoa_to_sheet(allData);
 
           // Sanitize sheet name (Excel sheet names have restrictions)
           let sheetName = skillData.description.substring(0, 31);
