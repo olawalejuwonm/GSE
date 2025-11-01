@@ -92,6 +92,41 @@
       color: #4f8cff;
       text-decoration: underline;
     }
+      .auth-form {
+        margin: 2rem 0;
+      }
+      .auth-form input {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #cfd8dc;
+        border-radius: 6px;
+        font-size: 1rem;
+        box-sizing: border-box;
+        margin-bottom: 1rem;
+      }
+      .auth-form input:focus {
+        border-color: #7b61ff;
+        outline: none;
+      }
+      .auth-btn {
+        display: inline-block;
+        background: linear-gradient(90deg, #7b61ff 0%, #4f8cff 100%);
+        color: #fff;
+        padding: 0.8rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .auth-btn:hover {
+        background: linear-gradient(90deg, #4f8cff 0%, #7b61ff 100%);
+        transform: translateY(-2px);
+      }
+      .hidden {
+        display: none;
+      }
     .success-msg {
       background: #d4edda;
       color: #155724;
@@ -128,9 +163,19 @@
 <body>
   <div class="container">
     <h1>📊 Download Student List</h1>
-    <p>Download the complete list of registered students organized by their selected skills.</p>
     
-    <div class="info-box">
+    <div id="auth-section">
+      <p>Please enter the admin password to access the download section.</p>
+      <div class="auth-form">
+        <input type="password" id="admin-password" placeholder="Enter admin password" />
+        <button class="auth-btn" onclick="authenticate()">🔓 Unlock</button>
+      </div>
+    </div>
+
+    <div id="download-section" class="hidden">
+      <p>Download the complete list of registered students organized by their selected skills.</p>
+      
+      <div class="info-box">
       <h3>📋 File Format:</h3>
       <ul>
         <li>Excel workbook (.xlsx)</li>
@@ -143,14 +188,33 @@
     <div id="success-msg" class="success-msg"></div>
     <div id="error-msg" class="error-msg"></div>
 
-    <button class="download-btn" onclick="downloadExcel()">
-      📥 Download Excel File
-    </button>
+      <button class="download-btn" onclick="downloadExcel()">
+        📥 Download Excel File
+      </button>
+    </div>
 
     <a href="/" class="back-link">← Back to Registration</a>
   </div>
 
   <script>
+    // Check if already authenticated in this session
+    if (sessionStorage.getItem('gse_admin_auth') === 'true') {
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('download-section').classList.remove('hidden');
+    }
+
+    // Handle Enter key on password input
+    document.addEventListener('DOMContentLoaded', () => {
+      const passwordInput = document.getElementById('admin-password');
+      if (passwordInput) {
+        passwordInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            authenticate();
+          }
+        });
+      }
+    });
+
     function showMessage(type, message) {
       const successEl = document.getElementById('success-msg');
       const errorEl = document.getElementById('error-msg');
@@ -172,7 +236,45 @@
       }, 5000);
     }
 
+    async function authenticate() {
+      const password = document.getElementById('admin-password').value;
+      
+      if (!password) {
+        showMessage('error', 'Please enter a password');
+        return;
+      }
+
+      try {
+        const response = await fetch('/student/verify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const result = await response.json();
+
+        if (result.authenticated) {
+          sessionStorage.setItem('gse_admin_auth', 'true');
+          document.getElementById('auth-section').classList.add('hidden');
+          document.getElementById('download-section').classList.remove('hidden');
+          showMessage('success', '✓ Authentication successful!');
+        } else {
+          showMessage('error', '✗ Invalid password. Access denied.');
+          document.getElementById('admin-password').value = '';
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        showMessage('error', '✗ Authentication failed. Please try again.');
+      }
+    }
+
     async function downloadExcel() {
+      // Verify session authentication
+      if (sessionStorage.getItem('gse_admin_auth') !== 'true') {
+        showMessage('error', 'Please authenticate first');
+        return;
+      }
+
       try {
         showMessage('success', 'Preparing your download...');
         

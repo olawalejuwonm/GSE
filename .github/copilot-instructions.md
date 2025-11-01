@@ -83,8 +83,19 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 - App setup: `src/app.module.ts`, `src/main.ts`
 - Email service: `src/mailer.service.ts`
 - UI: `src/public/index.html` (single-page static HTML with inline CSS/JS)
+- UI: 
+	- `src/public/index.html` (main registration page - single-page static HTML with inline CSS/JS)
+	- `src/public/download.html` (admin-only download page for exporting student list as Excel)
 - Seeders: `data-seeder/seed-*.ts` (see Data seeder utilities section for details)
 - Config: `.env` (not in repo), `package.json`, `tsconfig.json`, `eslint.config.mjs`, `.prettierrc`
+
+## Admin features
+- Download page: `src/public/download.html` allows admins to export all registered students as an Excel file
+- Password-protected: Requires `ADMIN_PASSWORD` env var; uses session storage for authentication state
+- API endpoints:
+	- POST `/student/verify-admin` { password } → `{ authenticated: boolean }` - validates admin password
+	- GET `/student/export/excel` → Downloads Excel file with students organized by skill (one tab per skill)
+- Excel format: Each skill gets its own sheet/tab with trainer info at the top and student list below
 
 ## Data seeder utilities
 Seven main utilities (8 total files, `hide-skills.ts` is used internally by `manage-hidden-skills.ts`):
@@ -108,6 +119,7 @@ Optional:
 - `GMAIL_SENDER_NAME`: Display name for email sender (default: "GSE Student Registration")
 - `EMAIL_SENDER`: Sender email address (defaults to GMAIL_USER)
 - `JWT_SECRET`: JWT secret (currently unused but may be needed for future auth features)
+- `ADMIN_PASSWORD`: Password for admin download page access (required for `/student/verify-admin`)
 
 ## Deployment
 - Heroku ready: `heroku-postbuild` script runs `npm run build`

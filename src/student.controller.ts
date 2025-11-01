@@ -338,6 +338,19 @@ export class StudentController {
     }
   }
 
+  @Post('verify-admin')
+  async verifyAdmin(@Body('password') password: string) {
+    const adminPassword = this.configService.get<string>('ADMIN_PASSWORD');
+    
+    if (!adminPassword) {
+      console.warn('ADMIN_PASSWORD not set in environment variables');
+      return { authenticated: false, error: 'Admin access not configured' };
+    }
+
+    const authenticated = password === adminPassword;
+    return { authenticated };
+  }
+
   @Get('export/excel')
   async exportStudentsToExcel(@Res() res: Response) {
     try {
