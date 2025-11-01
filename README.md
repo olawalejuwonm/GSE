@@ -7,6 +7,8 @@ This project is a NestJS web application for student registration using MongoDB 
 - Fill department, faculty, phone, and email
 - OTP sent to email for verification (Gmail SMTP)
 - Select skills after OTP confirmation
+- **Registration closure control** - Close/open registration via environment variable
+- **Excel export** - Download all registered students organized by skills in tabs
 
 ## Tech Stack
 - NestJS (TypeScript)
@@ -24,6 +26,7 @@ This project is a NestJS web application for student registration using MongoDB 
    GMAIL_USER=your_gmail_address@gmail.com
    GMAIL_PASS=your_gmail_app_password
    JWT_SECRET=your_jwt_secret
+   REGISTRATION_OPEN=true  # Optional: set to 'false' to close registration
    ```
 3. Start the app:
    ```sh
@@ -34,9 +37,26 @@ This project is a NestJS web application for student registration using MongoDB 
 - `src/` - Main source code
 - `test/` - Test files
 
+## New Features
+
+### Registration Closure
+Control registration status via environment variable:
+- Set `REGISTRATION_OPEN=false` to close registration
+- Students will see a closure message instead of the registration form
+- See [REGISTRATION_CLOSURE.md](REGISTRATION_CLOSURE.md) for details
+
+### Excel Export
+Download all registered students organized by skills:
+- Access the download page at `/download.html`
+- Each skill in a separate tab/worksheet
+- Includes student details and trainer information
+- File format: `GSE-Students-YYYY-MM-DD.xlsx`
+- See [FEATURE_SUMMARY.md](FEATURE_SUMMARY.md) for details
+
 ## Notes
 - Make sure to enable 2FA and use an App Password for Gmail SMTP.
 - Skills list can be customized in the code.
+- For complete documentation, see the markdown files in the root directory.
 
 ---
 

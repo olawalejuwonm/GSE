@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Download Student List</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(120deg, #e0e7ff 0%, #f7f7f7 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      max-width: 500px;
+      background: #fff;
+      padding: 3rem 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px #0002;
+      text-align: center;
+    }
+    h1 {
+      color: #2d3a5a;
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      letter-spacing: 0.5px;
+    }
+    p {
+      color: #555;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .info-box {
+      background: #f7f9ff;
+      border-left: 4px solid #7b61ff;
+      padding: 1rem;
+      margin: 1.5rem 0;
+      text-align: left;
+      border-radius: 6px;
+    }
+    .info-box h3 {
+      color: #2d3a5a;
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+    }
+    .info-box ul {
+      margin: 0.5rem 0 0 1.2rem;
+      padding: 0;
+      color: #555;
+      font-size: 0.95rem;
+    }
+    .info-box ul li {
+      margin: 0.3rem 0;
+    }
+    .download-btn {
+      display: inline-block;
+      background: linear-gradient(90deg, #7b61ff 0%, #4f8cff 100%);
+      color: #fff;
+      padding: 1rem 2.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 16px #7b61ff33;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+    }
+    .download-btn:hover {
+      background: linear-gradient(90deg, #4f8cff 0%, #7b61ff 100%);
+      box-shadow: 0 6px 24px #7b61ff44;
+      transform: translateY(-2px);
+    }
+    .download-btn:active {
+      transform: translateY(0);
+    }
+    .back-link {
+      display: block;
+      margin-top: 2rem;
+      color: #7b61ff;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover {
+      color: #4f8cff;
+      text-decoration: underline;
+    }
+    .success-msg {
+      background: #d4edda;
+      color: #155724;
+      padding: 0.8rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+      display: none;
+      border: 1px solid #c3e6cb;
+    }
+    .error-msg {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 0.8rem;
+      border-radius: 6px;
+      margin: 1rem 0;
+      display: none;
+      border: 1px solid #f5c6cb;
+    }
+    @media (max-width: 600px) {
+      .container {
+        max-width: 95vw;
+        padding: 2rem 1.5rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .download-btn {
+        padding: 0.9rem 2rem;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Download Student List</h1>
+    <p>Download the complete list of registered students organized by their selected skills.</p>
+    
+    <div class="info-box">
+      <h3>📋 File Format:</h3>
+      <ul>
+        <li>Excel workbook (.xlsx)</li>
+        <li>Each skill in a separate tab/sheet</li>
+        <li>Includes: Matric Number, Name, Department, Faculty, Phone, Email</li>
+        <li>Trainer details at the top of each sheet</li>
+      </ul>
+    </div>
+
+    <div id="success-msg" class="success-msg"></div>
+    <div id="error-msg" class="error-msg"></div>
+
+    <button class="download-btn" onclick="downloadExcel()">
+      📥 Download Excel File
+    </button>
+
+    <a href="/" class="back-link">← Back to Registration</a>
+  </div>
+
+  <script>
+    function showMessage(type, message) {
+      const successEl = document.getElementById('success-msg');
+      const errorEl = document.getElementById('error-msg');
+      
+      if (type === 'success') {
+        successEl.textContent = message;
+        successEl.style.display = 'block';
+        errorEl.style.display = 'none';
+      } else {
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+        successEl.style.display = 'none';
+      }
+      
+      // Hide after 5 seconds
+      setTimeout(() => {
+        successEl.style.display = 'none';
+        errorEl.style.display = 'none';
+      }, 5000);
+    }
+
+    async function downloadExcel() {
+      try {
+        showMessage('success', 'Preparing your download...');
+        
+        const response = await fetch('/student/export/excel');
+        
+        if (!response.ok) {
+          throw new Error('Failed to download file');
+        }
+        
+        // Get the blob from response
+        const blob = await response.blob();
+        
+        // Create a download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `GSE-Students-${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showMessage('success', '✓ Download started successfully!');
+      } catch (error) {
+        console.error('Download error:', error);
+        showMessage('error', '✗ Failed to download file. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>
