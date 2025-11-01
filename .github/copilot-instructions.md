@@ -41,6 +41,7 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 ## Email/OTP
 - Email is the single source of truth for OTP and skill assignment. Use email to look up/update OTP and skills; do not use matric for these steps.
 - OTP is 6 digits (`crypto.randomInt`), does not expire (reusable); stored in Student. The `otpExpires` field exists in schema but is always set to `undefined` (not used). Verification sets `isEmailVerified = true` but keeps OTP for potential reuse.
+- **Security note**: Non-expiring OTPs are intentional for this educational registration system to allow students to reuse codes if they lose them or need to restart registration. This reduces support burden but is not recommended for high-security applications.
 - SMTP via `nodemailer` with Gmail: `GMAIL_USER`/`GMAIL_PASS` (App Password recommended).
 
 ## Seeding and data sources
@@ -86,6 +87,7 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 - Config: `.env` (not in repo), `package.json`, `tsconfig.json`, `eslint.config.mjs`, `.prettierrc`
 
 ## Data seeder utilities
+Seven main utilities (8 total files, `hide-skills.ts` is used internally by `manage-hidden-skills.ts`):
 - `seed-students.ts`: Import students from Excel file (pass file path as argument)
 - `seed-skills.ts`: Import skills from `datas/GSE 301 SKILL LIST.xlsx`
 - `clear-students.ts`: Remove all students from database
