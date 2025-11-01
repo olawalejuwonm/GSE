@@ -6,10 +6,10 @@ This is a NestJS app for student registration with MongoDB (Mongoose) and Gmail 
 
 ## Tech Stack
 - **Framework**: NestJS 11.x (Node.js 20.x)
-- **Language**: TypeScript 5.7.x
+- **Language**: TypeScript 5.x
 - **Database**: MongoDB via Mongoose 8.x
 - **Email**: Nodemailer with Gmail SMTP
-- **Testing**: Jest for unit tests and e2e tests
+- **Testing**: Jest 29.x for unit tests and e2e tests
 - **Code Quality**: ESLint 9.x, Prettier 3.x
 - **Build**: Webpack via NestJS CLI
 
